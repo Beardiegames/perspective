@@ -1,33 +1,12 @@
+mod config;
 mod sprite_loader;
 mod shaders;
 mod render;
 
+use config::*;
 use macroquad::prelude::*;
 use render::*;
 use sprite_loader::Sprites;
-
-const WINDOW_WIDTH: i32 = 800;
-const WINDOW_HEIGHT: i32 = 600;
-const PIXEL_SIZE: f32 = 8.;
-const SPRITE_SIZE: f32 = 32.;
-
-
-fn window_conf() -> Conf {
-    Conf {
-        window_title: "Game".to_owned(),
-        fullscreen: true,
-        window_resizable: false,
-        window_width: WINDOW_WIDTH,
-        window_height: WINDOW_HEIGHT,
-        sample_count: 1,
-        high_dpi: true,
-        icon: None,
-        platform: miniquad::conf::Platform {
-            framebuffer_alpha: true,
-            ..Default::default()
-        }
-    }
-}
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -48,7 +27,7 @@ async fn main() {
 		
         
         draw_hex_tiles(&mut hex_buffer);
-        //draw_sprites(&mut sprite_buffer);
+        draw_sprites(&mut sprite_buffer);
         
         next_frame().await
     }
