@@ -46,8 +46,9 @@ async fn main() {
 		// draw
 		clear_background(LIGHTGRAY);
 		
-        //draw_sprites(&mut sprite_buffer);
+        
         draw_hex_tiles(&mut hex_buffer);
+        //draw_sprites(&mut sprite_buffer);
         
         next_frame().await
     }
@@ -56,18 +57,29 @@ async fn main() {
 fn setup_tiles() -> DrawBuffer<HexTile> {
 	let mut hex_buffer = DrawBuffer::<HexTile>::new(1000);
 		
-	//for x in (0..WINDOW_WIDTH).step_by(50) {
-		//for y in (25..WINDOW_HEIGHT).step_by(50) {
-			hex_buffer.define(
-				HexTile {
-					mesh: create_hex_mesh(RED),
-					// pos: Vec2 { x: x as f32, y: y as f32 },
-					// rot: 0.,
-					// col: RED,
-				}
-			);
-		//}
-	//}
+	for i in -16..16 {
+		for j in -4..16 {
+
+			let xbnd = i as f32 + 0.5 * j as f32;
+			if xbnd > -8.0 && xbnd < 8.0 {  
+		
+				hex_buffer.define(
+					HexTile::new(
+						TilePos {
+							hor: i as f32,
+							ver: j as f32,
+						},
+						Color { 
+							r: (i + 10) as f32 / 32.0,
+							g: (j + 10) as f32 / 32.0,
+							b: 0.5,
+							a: 1.0,
+						}
+					)
+				);
+			}
+		}
+	}
 	hex_buffer
 }
 
