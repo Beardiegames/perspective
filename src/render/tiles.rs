@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 use macroquad::models::Vertex;
 use super::*;
 
+#[derive(Clone)]
 pub struct TilePos {
 	pub hor: f32,
 	pub ver: f32,	
@@ -72,28 +73,6 @@ impl HexTile {
 	pub fn col(&self) -> &Color {
 		&self.col
 	}
-}
-
-pub fn draw_hex_tiles(dbuff: &mut DrawBuffer<HexTile>) {
-	set_camera(&Camera3D {
-        position: vec3(-5., 5., 0.),
-        up: vec3(0., 1., 0.),
-        target: vec3(0., 0., 0.),
-        //projection: Projection::Orthographics,
-        //fovy: 10.0,
-        ..Default::default()
-    });
-    
-    //gl_use_default_material();
-    //draw_grid(20, 1., BLACK, GRAY);
-    
-	for item in dbuff.item_list() {
-		draw_mesh(&item.mesh);
-    }
-    dbuff.clear_queue();
-
-	//draw_cube(vec3(2., 0., -2.), vec3(0.4, 0.4, 0.4), None, BLACK);
-    //draw_mesh(&create_hex_mesh(RED));
 }
 
 pub fn create_hex_mesh(color: Color) -> Mesh {

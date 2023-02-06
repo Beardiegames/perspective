@@ -1,34 +1,48 @@
 use macroquad::prelude::*;
 use crate::render::*;
 
-pub struct Sprites {
+pub struct SpritePointers {
 	pub grass: DrawPointer<Sprite>,
-	pub wall: DrawPointer<Sprite>,
+	pub wall1: DrawPointer<Sprite>,
 	pub wall2: DrawPointer<Sprite>,
 }
 
-pub fn create_sprite_objects(sprite_buffer: &mut DrawBuffer<Sprite>, render_pipeline: &PipelineParams) -> Sprites {
- 	Sprites {
-		grass: grass(sprite_buffer, *render_pipeline),
-		wall: wall(sprite_buffer, *render_pipeline),
-		wall2: wall(sprite_buffer, *render_pipeline),
-	}
+impl GuiCustoms for SpritePointers {
+
+	fn gui_setup(sprites: &mut DrawBuffer<Sprite>, gl_pipe: &PipelineParams) -> SpritePointers {
+
+		let grass = grass(sprites, gl_pipe);
+		let wall1 = wall(sprites, gl_pipe);
+		let wall2 = wall(sprites, gl_pipe);	
+		{
+	   		let grass_obj = sprites.edit(&grass);
+	   		grass_obj.pos.x = 100.;
+	   		grass_obj.pos.y = 50.;
+		}
+		
+	 	SpritePointers {
+			grass,
+			wall1,
+			wall2,
+		}
+	}	
 }
 
-pub fn wall(buffer: &mut DrawBuffer<Sprite>, pipeline: PipelineParams) -> DrawPointer<Sprite> {
-	buffer.define(
+
+pub fn wall(sprites: &mut DrawBuffer<Sprite>, pipe: &PipelineParams) -> DrawPointer<Sprite> {
+	sprites.define(
 		Sprite::new(
     		texture_from_file(include_bytes!("../assets/WallTiles.png")),
-    		create_sprite_material(pipeline)
+    		create_sprite_material(*pipe)
     	)
     )
 }
 
-pub fn grass(buffer: &mut DrawBuffer<Sprite>, pipeline: PipelineParams) -> DrawPointer<Sprite> {
-	buffer.define(
+pub fn grass(sprites: &mut DrawBuffer<Sprite>, pipe: &PipelineParams) -> DrawPointer<Sprite> {
+	sprites.define(
 		Sprite::new(
     		texture_from_file(include_bytes!("../assets/Grass-Sheet.png")),
-    		create_sprite_material(pipeline)
+    		create_sprite_material(*pipe)
     	)
     )
 }

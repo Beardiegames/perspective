@@ -55,4 +55,8 @@ impl<T> DrawBuffer<T> {
 	pub fn item_list(&self) -> &Vec<T> {
 		&self.prefab_items
 	}
+
+	pub fn mut_item_list(&mut self) -> &mut Vec<T> {
+		&mut self.prefab_items
+	}
 }

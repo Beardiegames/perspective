@@ -47,24 +47,3 @@ pub fn create_sprite_material(pipeline_params: PipelineParams) -> Material {
     )
     .unwrap()
 }
-
-pub fn draw_sprites(dbuff: &mut DrawBuffer<Sprite>) {
-	set_default_camera();
-
-	for idx in dbuff.queue() {
-		let drawable = dbuff.by_index(idx);
-		
-	    gl_use_material(drawable.material);
-
-	    draw_texture_ex(
-	        drawable.texture,
-	        //drawable.pos.x.round() * PIXEL_SIZE, 
-	        //drawable.pos.y.round() * PIXEL_SIZE,
-	        drawable.pos.x * PIXEL_SIZE, 
-	       	drawable.pos.y * PIXEL_SIZE,
-	        drawable.color,
-	    	drawable.params.clone()
-	    );
-    }
-    dbuff.clear_queue();
-}
