@@ -1,7 +1,7 @@
 use std::ops::{Add, Sub, Mul, Div};
 use macroquad::prelude::*;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TilePos {
 	pub hor: f32,
 	pub ver: f32,	
@@ -12,8 +12,8 @@ impl TilePos {
 	
 	pub fn from_real_position(pos: Vec3) -> Self {
 		TilePos {
-			hor: pos.z - (0.5 / pos.x),
-			ver: 0.75 / pos.x,	
+			hor: pos.z,// - pos.x * 2.0,
+			ver: pos.x * 1.3333333,
 		}
 	}
 
@@ -21,8 +21,14 @@ impl TilePos {
 		Vec3 {
 			x: 0.75 * self.ver,
 			y: 0.0,
-			z: self.hor + 0.5 * self.ver
+			z: self.hor,// + 0.5 * self.ver
 		}
+	}
+
+	pub fn round(mut self) -> Self {
+		self.hor = self.hor.round();
+		self.ver = self.ver.round();
+		self
 	}
 
 }

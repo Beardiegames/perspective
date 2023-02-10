@@ -15,7 +15,7 @@ use map::*;
 async fn main() -> Result<(), MapError> {
 
 	let mut gui = Gui::<SpritePointers>::new();
-	// let map = Map::new(10, 10);
+	// let map = Map::new(100, 100);
 	// map.write_to_file("./assets/maps/world.toml")?;
 	// return Ok(());
 	let map = Map::read_from_file("./assets/maps/world.toml")?;
@@ -45,8 +45,8 @@ async fn main() -> Result<(), MapError> {
 fn update_scene(scene: &mut Scene) {
 	let time = macroquad::time::get_time() as f32;
 
-	scene.camera.position.z = (time * 0.6).sin() * 10.0;
-	scene.camera.target.z = (time * 0.6).sin() * 10.0;
+	scene.camera.position.z = (time * 0.4).sin() * 20.0;
+	scene.camera.target.z = (time * 0.4).sin() * 20.0;
 }
 
 fn update_sprites(gui: &mut Gui<SpritePointers>) {

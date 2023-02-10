@@ -1,7 +1,13 @@
 use macroquad::prelude::*;
-use noise::*;
+//use noise::*;
 use crate::types::*;
 use super::*;
+
+
+pub const CAMERA_OFFSET_Z: f32 = -5.0;
+pub const CAMERA_OFFSET_X: f32 = 5.0;
+pub const GRID_WIDTH: usize = 9;
+pub const GRID_HEIGHT: usize = 21;
 
 
 pub struct Scene {
@@ -16,7 +22,7 @@ impl Scene {
 	pub fn new(map: Map) -> Self {
 		Scene {
 			camera: Camera3D {
-		        position: vec3(-5., 5., 0.),
+		        position: vec3(CAMERA_OFFSET_Z, CAMERA_OFFSET_X, 0.),
 		        up: vec3(0., 1., 0.),
 		        target: vec3(0., 0., 0.),
 		        //projection: Projection::Orthographics,
@@ -30,8 +36,8 @@ impl Scene {
 	}
 
 	pub fn update_floor_tiles(&mut self) {
-		self.map_offset.hor = self.camera.position.z.round() + 0.0;
-		self.map_offset.ver = self.camera.position.x.round() + 5.0;
+		self.map_offset = TilePos::from_real_position(self.camera.target)
+			.round();
 
 		//let mx_offset_ver = self.map_offset.ver + 8.0;
 		//let tilepos_hor = &self.map_offset;
@@ -39,25 +45,30 @@ impl Scene {
 		for tile in self.tiles.mut_item_list() {
 			tile.offset_pos(self.map_offset.clone());
 
-			let mut mxpos = tile.get_matrix_position().clone();
-
-			if mxpos.hor as f32 + self.map_offset.hor < 0.0
-			{
-				tile.set_color(BLUE);
-				continue;
-			}
-
+			let mx_pos = tile.get_matrix_position();
+			tile.set_color(self.map.get_at_mx(&mx_pos));
+			
+			
+// 
+			// let mut mxpos = tile.get_matrix_position().clone();
+// 
+			// if mxpos.hor as f32 + self.map_offset.hor < 0.0
+			// {
+				// tile.set_color(BLUE);
+				// continue;
+			// }
+// 
 			//if mxpos.hor as f32 + (mx_offset_hor + self.map_offset.hor) >= 0.0
 			//&& mxpos.ver as f32 + self.map_offset.ver >= 0.0
 			//{
-				mxpos.hor += self.map_offset.hor as usize;
-				mxpos.ver += self.map_offset.ver as usize;
-				
-				if let Some(col) = self.map.get_at_mx(&mxpos) {
-					tile.set_color(col);
-				} else {
-					tile.set_color(RED);
-				}
+				// mxpos.hor += self.map_offset.hor as usize;
+				// mxpos.ver += self.map_offset.ver as usize;
+				// 
+				// if let Some(col) = self.map.get_at_mx(&mxpos) {
+					// tile.set_color(col);
+				// } else {
+					// tile.set_color(RED);
+				// }
 			//} else {
 			//	tile.set_color(BLACK);
 			//}
@@ -67,11 +78,13 @@ impl Scene {
 	pub fn draw(&mut self) {
 		set_camera(&self.camera);
 	    
-	    //gl_use_default_material();
-	    //draw_grid(20, 1., BLACK, GRAY);
+	    gl_use_default_material();
+	    draw_grid(20, 1., BLACK, GRAY);
 	    
 		for item in self.tiles.item_list() {
-			draw_mesh(&item.mesh);
+			if let Some(_c) = item.color() {
+				draw_mesh(&item.mesh);
+			}
 			
 			// let pos = item.position();
 			// draw_text(text: &str, x: f32, y: f32, font_size: f32, color: Color)
@@ -82,43 +95,33 @@ impl Scene {
 
 
 fn setup_tiles() -> DrawBuffer<HexTile> {
-	let mut hex_buffer = DrawBuffer::<HexTile>::new(1000);
+	let mut hex_buffer = DrawBuffer::<HexTile>::new(GRID_WIDTH * GRID_HEIGHT);
+	
+	for ver in 0..GRID_HEIGHT {
+	let grid_width_fact = GRID_WIDTH + ver;
+	
+	for hor in 0..grid_width_fact {
 
-	let x_start: i32 = -16;
-	let x_count: usize = 32;
-	let y_start: i32 = -4;
-	let y_count: usize = 20;
+		let offset = match ver % 2 == grid_width_fact % 2 { true => 0.75, false => 0.25 };
 		
-	for i in 0..x_count {
-		for j in 0..y_count {
+		let screen_pos = TilePos {
+			hor: hor as f32 - grid_width_fact as f32 / 2.0 + offset,
+			ver: ver as f32 - GRID_HEIGHT as f32 / 5.0,
+		};
 
-			let pos_x = i as i32 + x_start;
-			let pos_y = j as i32 + y_start;
+		let mx_pos = MxPos { hor: hor + (GRID_HEIGHT - ver) / 2, ver };
 
-			let xbnd = pos_x as f32 + 0.5 * pos_y as f32;
-			if xbnd > -8.0 && xbnd < 8.0 {  
-				
-				hex_buffer.define(
-					HexTile::new(
-						MxPos {
-							hor: i,
-							ver: j,	
-						},
-						TilePos {
-							hor: pos_x as f32,
-							ver: pos_y as f32,
-						},
-						//Color { r: rgb, g: rgb, b: 0.5, a: 1.0 },
-						Color {
-							r: (pos_x + 16) as f32 / 32.0,
-							g: (pos_y + 4) as f32 / 32.0,
-							b: 0.5,
-							a: 1.0,
-						}
-					)
-				);
-			}
-		}
-	}
+		hex_buffer.define(HexTile::new(mx_pos, screen_pos, BLACK));
+	}}
+	
 	hex_buffer
+	
+	//println!("mx_pos: {:?}", mx_pos);
+
+	// let color = Color {
+		// r: hor as f32 / GRID_HEIGHT as f32,
+		// g: ver as f32 / grid_width_fact as f32,
+		// b: 0.5,
+		// a: 1.0,
+	// };
 }

@@ -15,7 +15,7 @@ use crate::types::*;
 //use super::*;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
 	width: usize,
 	height: usize,
@@ -40,12 +40,18 @@ impl Map {
 	}
 
 	pub fn get_at_mx(&self, mx: &MxPos)-> Option<Color> {
-		let idx = mx.ver * self.width + mx.hor % self.width;
-		
-		match idx < self.matrix.len() {
-			true => Some(self.matrix[idx].color()),
-			false => None,
+		if mx.hor < self.width && mx.ver < self.height {
+
+			let idx = mx.ver * self.width + mx.hor % self.width;
+					
+			match idx < self.matrix.len() {
+				true => Some(self.matrix[idx].color()),
+				false => None,
+			}
 		}
+		else {
+			None
+		}		
 	}
 
 	pub fn set_values(&mut self) {

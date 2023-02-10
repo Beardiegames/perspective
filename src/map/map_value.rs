@@ -2,7 +2,7 @@ use serde::*;
 use macroquad::prelude::*;
 
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MapValue {
 	pub pos: [u16; 2],
 	pub color: [u8; 4], 
