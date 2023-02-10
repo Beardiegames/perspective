@@ -1,54 +1,37 @@
 use macroquad::prelude::*;
 use macroquad::models::Vertex;
-use super::*;
+use crate::types::*;
 
-#[derive(Clone)]
-pub struct TilePos {
-	pub hor: f32,
-	pub ver: f32,	
-}
-
-impl TilePos {
-	pub const ZERO: Self = TilePos { hor: 0.0, ver: 0.0, };
-	
-	pub fn from_real_position(pos: Vec3) -> Self {
-		TilePos {
-			hor: (pos.z - (0.5 / pos.x)) as f32,
-			ver: (0.75 / pos.x) as f32,	
-		}
-	}
-
-	pub fn to_real_position(&self) -> Vec3 {
-		Vec3 {
-			x: 0.75 * self.ver as f32,
-			y: 0.0,
-			z: self.hor as f32 + 0.5 * self.ver as f32,
-		}
-	}
-}
 
 pub struct HexTile {
 	pub mesh: Mesh, 
 	
 	root: Mesh,
-	pos: TilePos,
+	mx_pos: MxPos,
+	screen_pos: TilePos,
+	offset: TilePos,
 	col: Color,
 }
 
 impl HexTile {
-	pub fn new(pos: TilePos, col: Color) -> Self {
-		let mut tile = HexTile {
+	pub fn new(mx_pos: MxPos, screen_pos: TilePos, col: Color) -> Self {
+		HexTile {
 			mesh: create_hex_mesh(col),
 			root: create_hex_mesh(col),
-			pos: TilePos::ZERO,
+			mx_pos,
+			screen_pos,
+			offset: TilePos::ZERO,
 			col,
-		};
-		tile.set_pos(pos);
-		tile
+		}
+	}
+
+	pub fn get_matrix_position(&self) -> &MxPos {
+		&self.mx_pos
 	}
 	
-	pub fn set_pos(&mut self, pos: TilePos) {
-		let real = pos.to_real_position();
+	pub fn offset_pos(&mut self, offset: TilePos) {
+		self.offset = offset;
+		let real = self.position().to_real_position();
 		
 		for i in 0..6 {	
 			let vx = self.root.vertices[i].position.z + real.z;
@@ -56,21 +39,21 @@ impl HexTile {
 			self.mesh.vertices[i].position.z = vx;
 			self.mesh.vertices[i].position.x = vy;
 		}
-		self.pos = pos;
+		
 	}
 
-	pub fn pos(&self) -> &TilePos {
-		&self.pos
+	pub fn position(&self) -> TilePos {
+		&self.screen_pos + &self.offset
 	}
 
-	pub fn set_col(&mut self, col: Color) {
+	pub fn set_color(&mut self, col: Color) {
 		for i in 0..6 {	
 			self.mesh.vertices[i].color = col;
 		}
 		self.col = col;
 	}
 	
-	pub fn col(&self) -> &Color {
+	pub fn color(&self) -> &Color {
 		&self.col
 	}
 }

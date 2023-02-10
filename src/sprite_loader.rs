@@ -32,7 +32,7 @@ impl GuiCustoms for SpritePointers {
 pub fn wall(sprites: &mut DrawBuffer<Sprite>, pipe: &PipelineParams) -> DrawPointer<Sprite> {
 	sprites.define(
 		Sprite::new(
-    		texture_from_file(include_bytes!("../assets/WallTiles.png")),
+    		texture_from_file(include_bytes!("../assets/sprites/WallTiles.png")),
     		create_sprite_material(*pipe)
     	)
     )
@@ -41,7 +41,7 @@ pub fn wall(sprites: &mut DrawBuffer<Sprite>, pipe: &PipelineParams) -> DrawPoin
 pub fn grass(sprites: &mut DrawBuffer<Sprite>, pipe: &PipelineParams) -> DrawPointer<Sprite> {
 	sprites.define(
 		Sprite::new(
-    		texture_from_file(include_bytes!("../assets/Grass-Sheet.png")),
+    		texture_from_file(include_bytes!("../assets/sprites/Grass-Sheet.png")),
     		create_sprite_material(*pipe)
     	)
     )

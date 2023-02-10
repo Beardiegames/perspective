@@ -1,0 +1,402 @@
+width = 10
+height = 10
+
+[[matrix]]
+pos = [0, 0]
+color = [255, 191, 127, 255]
+
+[[matrix]]
+pos = [1, 0]
+color = [255, 227, 127, 255]
+
+[[matrix]]
+pos = [2, 0]
+color = [255, 227, 127, 255]
+
+[[matrix]]
+pos = [3, 0]
+color = [255, 191, 127, 255]
+
+[[matrix]]
+pos = [4, 0]
+color = [255, 180, 127, 255]
+
+[[matrix]]
+pos = [5, 0]
+color = [255, 202, 127, 255]
+
+[[matrix]]
+pos = [6, 0]
+color = [255, 191, 127, 255]
+
+[[matrix]]
+pos = [7, 0]
+color = [255, 154, 127, 255]
+
+[[matrix]]
+pos = [8, 0]
+color = [255, 154, 127, 255]
+
+[[matrix]]
+pos = [9, 0]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [0, 1]
+color = [255, 180, 255, 255]
+
+[[matrix]]
+pos = [1, 1]
+color = [63, 201, 127, 255]
+
+[[matrix]]
+pos = [2, 1]
+color = [63, 201, 127, 255]
+
+[[matrix]]
+pos = [3, 1]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [4, 1]
+color = [63, 178, 127, 255]
+
+[[matrix]]
+pos = [5, 1]
+color = [63, 196, 127, 255]
+
+[[matrix]]
+pos = [6, 1]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [7, 1]
+color = [63, 153, 127, 255]
+
+[[matrix]]
+pos = [8, 1]
+color = [63, 171, 127, 255]
+
+[[matrix]]
+pos = [9, 1]
+color = [63, 202, 255, 255]
+
+[[matrix]]
+pos = [0, 2]
+color = [255, 202, 255, 255]
+
+[[matrix]]
+pos = [1, 2]
+color = [63, 181, 127, 255]
+
+[[matrix]]
+pos = [2, 2]
+color = [63, 181, 127, 255]
+
+[[matrix]]
+pos = [3, 2]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [4, 2]
+color = [63, 228, 127, 255]
+
+[[matrix]]
+pos = [5, 2]
+color = [63, 233, 127, 255]
+
+[[matrix]]
+pos = [6, 2]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [7, 2]
+color = [63, 181, 127, 255]
+
+[[matrix]]
+pos = [8, 2]
+color = [63, 185, 127, 255]
+
+[[matrix]]
+pos = [9, 2]
+color = [63, 180, 255, 255]
+
+[[matrix]]
+pos = [0, 3]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [1, 3]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [2, 3]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [3, 3]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [4, 3]
+color = [63, 227, 127, 255]
+
+[[matrix]]
+pos = [5, 3]
+color = [63, 227, 127, 255]
+
+[[matrix]]
+pos = [6, 3]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [7, 3]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [8, 3]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [9, 3]
+color = [63, 191, 255, 255]
+
+[[matrix]]
+pos = [0, 4]
+color = [255, 154, 255, 255]
+
+[[matrix]]
+pos = [1, 4]
+color = [63, 128, 127, 255]
+
+[[matrix]]
+pos = [2, 4]
+color = [63, 127, 127, 255]
+
+[[matrix]]
+pos = [3, 4]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [4, 4]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [5, 4]
+color = [63, 201, 127, 255]
+
+[[matrix]]
+pos = [6, 4]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [7, 4]
+color = [63, 178, 127, 255]
+
+[[matrix]]
+pos = [8, 4]
+color = [63, 204, 127, 255]
+
+[[matrix]]
+pos = [9, 4]
+color = [63, 202, 255, 255]
+
+[[matrix]]
+pos = [0, 5]
+color = [255, 154, 255, 255]
+
+[[matrix]]
+pos = [1, 5]
+color = [63, 156, 127, 255]
+
+[[matrix]]
+pos = [2, 5]
+color = [63, 138, 127, 255]
+
+[[matrix]]
+pos = [3, 5]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [4, 5]
+color = [63, 181, 127, 255]
+
+[[matrix]]
+pos = [5, 5]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [6, 5]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [7, 5]
+color = [63, 204, 127, 255]
+
+[[matrix]]
+pos = [8, 5]
+color = [63, 178, 127, 255]
+
+[[matrix]]
+pos = [9, 5]
+color = [63, 180, 255, 255]
+
+[[matrix]]
+pos = [0, 6]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [1, 6]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [2, 6]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [3, 6]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [4, 6]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [5, 6]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [6, 6]
+color = [63, 191, 127, 255]
+
+[[matrix]]
+pos = [7, 6]
+color = [63, 202, 127, 255]
+
+[[matrix]]
+pos = [8, 6]
+color = [63, 180, 127, 255]
+
+[[matrix]]
+pos = [9, 6]
+color = [63, 191, 255, 255]
+
+[[matrix]]
+pos = [0, 7]
+color = [255, 202, 255, 255]
+
+[[matrix]]
+pos = [1, 7]
+color = [63, 214, 127, 255]
+
+[[matrix]]
+pos = [2, 7]
+color = [63, 215, 127, 255]
+
+[[matrix]]
+pos = [3, 7]
+color = [63, 227, 127, 255]
+
+[[matrix]]
+pos = [4, 7]
+color = [63, 218, 127, 255]
+
+[[matrix]]
+pos = [5, 7]
+color = [63, 163, 127, 255]
+
+[[matrix]]
+pos = [6, 7]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [7, 7]
+color = [63, 171, 127, 255]
+
+[[matrix]]
+pos = [8, 7]
+color = [63, 185, 127, 255]
+
+[[matrix]]
+pos = [9, 7]
+color = [63, 202, 255, 255]
+
+[[matrix]]
+pos = [0, 8]
+color = [255, 180, 255, 255]
+
+[[matrix]]
+pos = [1, 8]
+color = [63, 183, 127, 255]
+
+[[matrix]]
+pos = [2, 8]
+color = [63, 224, 127, 255]
+
+[[matrix]]
+pos = [3, 8]
+color = [63, 227, 127, 255]
+
+[[matrix]]
+pos = [4, 8]
+color = [63, 205, 127, 255]
+
+[[matrix]]
+pos = [5, 8]
+color = [63, 176, 127, 255]
+
+[[matrix]]
+pos = [6, 8]
+color = [63, 154, 127, 255]
+
+[[matrix]]
+pos = [7, 8]
+color = [63, 153, 127, 255]
+
+[[matrix]]
+pos = [8, 8]
+color = [63, 181, 127, 255]
+
+[[matrix]]
+pos = [9, 8]
+color = [63, 180, 255, 255]
+
+[[matrix]]
+pos = [0, 9]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [1, 9]
+color = [255, 180, 255, 255]
+
+[[matrix]]
+pos = [2, 9]
+color = [255, 202, 255, 255]
+
+[[matrix]]
+pos = [3, 9]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [4, 9]
+color = [255, 180, 255, 255]
+
+[[matrix]]
+pos = [5, 9]
+color = [255, 202, 255, 255]
+
+[[matrix]]
+pos = [6, 9]
+color = [255, 191, 255, 255]
+
+[[matrix]]
+pos = [7, 9]
+color = [255, 180, 255, 255]
+
+[[matrix]]
+pos = [8, 9]
+color = [255, 202, 255, 255]
+
+[[matrix]]
+pos = [9, 9]
+color = [255, 191, 255, 255]

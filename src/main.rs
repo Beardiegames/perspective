@@ -2,18 +2,24 @@ mod config;
 mod sprite_loader;
 mod shaders;
 mod render;
+mod types;
+mod map;
 
 use config::*;
 use macroquad::prelude::*;
 use render::*;
 use sprite_loader::*;
+use map::*;
 
 #[macroquad::main(window_conf)]
-async fn main() {
+async fn main() -> Result<(), MapError> {
 
 	let mut gui = Gui::<SpritePointers>::new();
-	let mut scene = Scene::new();
-	//let mut map = create_map();
+	// let map = Map::new(10, 10);
+	// map.write_to_file("./assets/maps/world.toml")?;
+	// return Ok(());
+	let map = Map::read_from_file("./assets/maps/world.toml")?;
+	let mut scene = Scene::new(map);
 			
     'game: loop {
     	// input
@@ -24,7 +30,7 @@ async fn main() {
 		update_sprites(&mut gui);
 
 		// pre-draw update
-		scene.move_tiles_into_view();
+		scene.update_floor_tiles();
 		
 		// draw
 		clear_background(LIGHTGRAY);        
@@ -33,6 +39,7 @@ async fn main() {
         
         next_frame().await
     }
+    Ok(())
 }
 
 fn update_scene(scene: &mut Scene) {
@@ -40,18 +47,6 @@ fn update_scene(scene: &mut Scene) {
 
 	scene.camera.position.z = (time * 0.6).sin() * 10.0;
 	scene.camera.target.z = (time * 0.6).sin() * 10.0;
-}
-
-fn create_map() -> [[f32; 20]; 100] {
-	let mut map = [[0.0; 20]; 100];
-	//let perlin = Perlin::new(0u32);
-
-	// for x in 0..100 {
-		// for y in 0..20 {
-					// 
-		// }
-	// }
-	map
 }
 
 fn update_sprites(gui: &mut Gui<SpritePointers>) {
