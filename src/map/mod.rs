@@ -17,13 +17,16 @@ use crate::types::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
-	width: usize,
-	height: usize,
+	width: i16,
+	height: i16,
 	matrix: Vec<MapValue>,
 }
 
 impl Map {
-	pub fn new(width: usize, height: usize) -> Self {
+	pub fn new(width: usize, height: usize) -> Result<Self, MapError> {
+		if width > i16::MAX as usize { return Err(MapError::out_of_bounds("width", &width.to_string(), &i16::MAX.to_string())); }
+		if height > i16::MAX as usize { return Err( MapError::out_of_bounds("height", &height.to_string(), &i16::MAX.to_string())); }
+	
 		let mut matrix: Vec<MapValue> = vec![GRAY.into(); width * height];
 
 		for y in 0..height {
@@ -32,17 +35,19 @@ impl Map {
 		}}
 
 		let mut map = Map {
-			width, height,
+			width: width as i16, 
+			height: height as i16,
 			matrix,
 		};
-		map.set_values();
-		map
+		map.random_matrix_values();
+		Ok(map)
 	}
 
 	pub fn get_at_mx(&self, mx: &MxPos)-> Option<Color> {
-		if mx.hor < self.width && mx.ver < self.height {
-
-			let idx = mx.ver * self.width + mx.hor % self.width;
+		if mx.hor >= 0 && mx.hor < self.width 
+		&& mx.ver >= 0 && mx.ver < self.height 
+		{
+			let idx = (mx.ver * self.width + mx.hor % self.width) as usize;
 					
 			match idx < self.matrix.len() {
 				true => Some(self.matrix[idx].color()),
@@ -54,12 +59,12 @@ impl Map {
 		}		
 	}
 
-	pub fn set_values(&mut self) {
+	pub fn random_matrix_values(&mut self) {
 		let perlin = Perlin::new(0u32);
 		let qual = 3.0;
 		let mut color = Color { r: 0.25, g: 0.5, b: 0.5, a: 1.0 };
 		
-		for i in 0..self.matrix.len() {
+		for i in 0..self.matrix.len() as i16 {
 			let pos_x = i % self.width;
 			let pos_y = i / self.width;
 			
@@ -89,7 +94,9 @@ impl Map {
 
 			//println!("noise: {}", noise);
 
-			self.matrix[i].set_color(&color);
+			if i >= 0 {
+				self.matrix[i as usize].set_color(&color);
+			}
 		}
 	}
 }

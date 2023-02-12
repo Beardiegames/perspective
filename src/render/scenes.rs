@@ -6,8 +6,8 @@ use super::*;
 
 pub const CAMERA_OFFSET_Z: f32 = -5.0;
 pub const CAMERA_OFFSET_X: f32 = 5.0;
-pub const GRID_WIDTH: usize = 9;
-pub const GRID_HEIGHT: usize = 21;
+pub const GRID_WIDTH: i16 = 9;
+pub const GRID_HEIGHT: i16 = 21;
 
 
 pub struct Scene {
@@ -95,7 +95,7 @@ impl Scene {
 
 
 fn setup_tiles() -> DrawBuffer<HexTile> {
-	let mut hex_buffer = DrawBuffer::<HexTile>::new(GRID_WIDTH * GRID_HEIGHT);
+	let mut hex_buffer = DrawBuffer::<HexTile>::new((GRID_WIDTH * GRID_HEIGHT) as usize);
 	
 	for ver in 0..GRID_HEIGHT {
 	let grid_width_fact = GRID_WIDTH + ver;

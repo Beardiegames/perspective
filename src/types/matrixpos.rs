@@ -4,15 +4,15 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct MxPos {
-	pub hor: usize,
-	pub ver: usize,
+	pub hor: i16,
+	pub ver: i16,
 }
 
 impl From<TilePos> for MxPos {
 	fn from(other: TilePos) -> Self {
 		MxPos {
-			hor: other.hor.abs() as usize,
-			ver: other.ver.abs() as usize,
+			hor: other.hor.round() as i16,
+			ver: other.ver.round() as i16,
 		}
 	}
 }
@@ -20,8 +20,8 @@ impl From<TilePos> for MxPos {
 impl From<&TilePos> for MxPos {
 	fn from(other: &TilePos) -> Self {
 		MxPos {
-			hor: other.hor.abs() as usize,
-			ver: other.ver.abs() as usize,
+			hor: other.hor.round() as i16,
+			ver: other.ver.round() as i16,
 		}
 	}
 }

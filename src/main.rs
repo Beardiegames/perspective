@@ -15,7 +15,7 @@ use map::*;
 async fn main() -> Result<(), MapError> {
 
 	let mut gui = Gui::<SpritePointers>::new();
-	// let map = Map::new(100, 100);
+	// let map = Map::new(100, 100)?;
 	// map.write_to_file("./assets/maps/world.toml")?;
 	// return Ok(());
 	let map = Map::read_from_file("./assets/maps/world.toml")?;
