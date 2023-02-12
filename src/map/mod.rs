@@ -61,15 +61,16 @@ impl Map {
 
 	pub fn random_matrix_values(&mut self) {
 		let perlin = Perlin::new(0u32);
-		let qual = 3.0;
+		let quality = 3.0;
+		let amount = 10.0;
 		let mut color = Color { r: 0.25, g: 0.5, b: 0.5, a: 1.0 };
 		
 		for i in 0..self.matrix.len() as i16 {
 			let pos_x = i % self.width;
 			let pos_y = i / self.width;
 			
-			let point: [f64; 2] = [pos_x as f64 / qual, pos_y as f64 / qual]; 
-			let noise = 0.75 + (perlin.get(point) / 4.0) as f32;
+			let point: [f64; 2] = [pos_x as f64 / quality, pos_y as f64 / quality]; 
+			let noise = 0.75 + (perlin.get(point) / amount) as f32;
 			color.g = noise;
 
 			if pos_x == 0 {

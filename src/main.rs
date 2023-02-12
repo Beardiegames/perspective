@@ -45,8 +45,10 @@ async fn main() -> Result<(), MapError> {
 fn update_scene(scene: &mut Scene) {
 	let time = macroquad::time::get_time() as f32;
 
-	scene.camera.position.z = (time * 0.4).sin() * 20.0;
-	scene.camera.target.z = (time * 0.4).sin() * 20.0;
+	scene.set_camera_position_2d(
+		32.0 + (time * 0.35).sin() * 44.0,
+		35.0 + (time * 0.35).cos() * 36.0,
+	);
 }
 
 fn update_sprites(gui: &mut Gui<SpritePointers>) {
