@@ -10,6 +10,8 @@ use macroquad::prelude::*;
 use render::*;
 use sprite_loader::*;
 use map::*;
+use types::*;
+
 
 #[macroquad::main(window_conf)]
 async fn main() -> Result<(), MapError> {
@@ -45,9 +47,11 @@ async fn main() -> Result<(), MapError> {
 fn update_scene(scene: &mut Scene) {
 	let time = macroquad::time::get_time() as f32;
 
-	scene.set_camera_position_2d(
-		32.0 + (time * 0.35).sin() * 44.0,
-		35.0 + (time * 0.35).cos() * 36.0,
+	scene.camera.set_position(
+		&TilePos::new(
+			32.0 + (time * 0.4).sin() * 44.0,
+			35.0 + (time * 0.4).cos() * 36.0,
+		)
 	);
 }
 

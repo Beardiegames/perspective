@@ -13,7 +13,7 @@ pub struct HexTile {
 }
 
 impl HexTile {
-	pub fn new(mx_pos: MxPos, screen_pos: TilePos, col: Color) -> Self {
+	pub fn new(mx_pos: MxPos, screen_pos: TilePos, col: Color) -> Self {		
 		let mut hex = HexTile {
 			mesh: create_hex_mesh(col),
 			root: create_hex_mesh(col),
@@ -32,9 +32,9 @@ impl HexTile {
 	
 	pub fn offset_pos(&mut self, offset: TilePos) {
 		self.offset = offset;
-		let real = self.position().to_real_position();
+		let real = Vec3::from(RealPos::from(self.position()));
 		
-		for i in 0..6 {	
+		for i in 0..6 {
 			let vx = self.root.vertices[i].position.z + real.z;
 			let vy = self.root.vertices[i].position.x + real.x;
 			self.mesh.vertices[i].position.z = vx;

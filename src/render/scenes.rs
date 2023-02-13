@@ -9,9 +9,77 @@ pub const CAM_OFFSET_X: f32 = 5.0;
 pub const GRID_WIDTH: i16 = 9;
 pub const GRID_HEIGHT: i16 = 21;
 
+pub struct CameraController{
+	quad_cam: Camera3D,
+	zoom_pos: Vec3,
+}
+
+impl CameraController{
+	pub fn new() -> Self {
+		let zoom_pos = Vec3::new(CAM_OFFSET_Z, CAM_OFFSET_X, 0.0);
+	
+		Self {
+			quad_cam: Camera3D {
+		        position: zoom_pos,
+		        up: vec3(0., 1., 0.),
+		        target: vec3(0., 0., 0.),
+		        //projection: Projection::Orthographics,
+		        //fovy: 10.0,
+		        ..Default::default()
+		    },
+		    zoom_pos
+		}
+	}
+
+	pub fn zoom(&self) -> &f32 {
+		&self.zoom_pos.y
+	}
+	
+	pub fn set_zoom(&mut self, to_zoom: f32) {
+		self.zoom_pos.x = -to_zoom;
+		self.zoom_pos.y = to_zoom;
+	}
+
+	pub fn position(&mut self) -> TilePos {
+		TilePos::from(self.real_position())
+	}
+
+	pub fn real_position(&mut self) -> RealPos {
+		RealPos::from(self.quad_cam.target)
+	}
+
+	pub fn set_position(&mut self, pos: &TilePos) {
+		self.set_real_position(&RealPos::from(pos))
+	}
+
+	pub fn set_real_position(&mut self, pos: &RealPos) {
+		let target = Vec3::from(pos.clone());
+		self.quad_cam.target = target;
+		
+		let vec_pos = Vec3::from(pos.clone()) + self.zoom_pos;
+		self.quad_cam.position = vec_pos;
+	}
+
+	pub fn horzontal_mut(&mut self) -> &mut f32 {
+		&mut self.quad_cam.target.x
+	}
+
+	pub fn vertical_mut(&mut self) -> &mut f32 {
+		&mut self.quad_cam.target.x
+	}
+
+	pub fn horzontal(&self) -> &f32 {
+		&self.quad_cam.target.x
+	}
+
+	pub fn vertical(&self) -> &f32 {
+		&self.quad_cam.target.x
+	}
+}
+
 
 pub struct Scene {
-	pub camera: Camera3D,
+	pub camera: CameraController,
 	pub map: Map,
 
 	tiles: DrawBuffer<HexTile>,
@@ -21,34 +89,15 @@ pub struct Scene {
 impl Scene {
 	pub fn new(map: Map) -> Self {
 		Scene {
-			camera: Camera3D {
-		        position: vec3(CAM_OFFSET_Z, CAM_OFFSET_X, 0.),
-		        up: vec3(0., 1., 0.),
-		        target: vec3(0., 0., 0.),
-		        //projection: Projection::Orthographics,
-		        //fovy: 10.0,
-		        ..Default::default()
-		    },
+			camera: CameraController::new(),
 		    map,
 		    tiles: setup_tiles(),
 		    map_offset: TilePos { hor: 0.0, ver: 0.0 }
 		}	
 	}
 
-	pub fn get_camera_position_2d(&mut self) -> Vec2 {
-		vec2(
-			self.camera.target.z,
-			self.camera.target.x
-		)
-	}
-
-	pub fn set_camera_position_2d(&mut self, x: f32, y: f32) {
-		self.camera.position = vec3(y + CAM_OFFSET_Z, CAM_OFFSET_X, x);	
-		self.camera.target = vec3(y, 0.0, x);
-	}
-
 	pub fn update_floor_tiles(&mut self) {
-		self.map_offset = TilePos::from_real_position(self.camera.target);
+		self.map_offset = self.camera.position();
 
 		// jump out of screen tiles
 		self.map_offset.hor = self.map_offset.hor.round();
@@ -56,17 +105,26 @@ impl Scene {
 
 		for tile in self.tiles.mut_item_list() {
 			tile.offset_pos(self.map_offset.clone());
-
 			let mx_pos = tile.get_matrix_position();
 			tile.set_color(self.map.get_at_mx(&mx_pos));
 		}
 	}
 	
 	pub fn draw(&mut self) {
-		set_camera(&self.camera);
+		set_camera(&self.camera.quad_cam);
+		// set_camera(
+			// &Camera3D {
+		        // position: vec3(CAM_OFFSET_Z, CAM_OFFSET_X, 0.0),
+		        // up: vec3(0., 1., 0.),
+		        // target: vec3(0., 0., 0.),
+		        // //projection: Projection::Orthographics,
+		        // //fovy: 10.0,
+		        // ..Default::default()
+		    // }
+		// );
 	    
 	    gl_use_default_material();
-	    //draw_grid(20, 1., BLACK, GRAY);
+	    draw_grid(20, 1., BLACK, GRAY);
 	    
 		for item in self.tiles.item_list() {
 			if let Some(_c) = item.color() {
