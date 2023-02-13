@@ -62,12 +62,12 @@ impl HexTile {
 }
 
 pub fn create_hex_mesh(color: Color) -> Mesh {
-	let w: f32 = 1.0;
-	let h: f32 = 1.0; //1.155 * w;
+	let w: f32 = 2.0;
+	let h: f32 = 2.0; //1.155 * w;
 	
 	let hor = 0.5 * h;
 	let ver = 0.5 * w;
-	let rib = 0.25;
+	let rib = 0.25 * h;
 
 	// NOTE: positions are => (Y,Z,-X) or (away,up,left)
 	let (vp0, uv0) = (Vec3::new(hor, 0.0, 0.0), 	Vec2::new(0.5, 0.0));

@@ -29,8 +29,8 @@ impl TilePos {
 fn from_real_to_tile(tilepos: &RealPos) -> TilePos {
 	let rpos = tilepos.as_vec3();	
 	TilePos {
-		hor: rpos.z,
-		ver: rpos.x * 1.3333333,
+		hor: rpos.z * 0.5, //  rpos.z,
+		ver: rpos.x * 0.6666666, //rpos.x * 1.3333333,
 	}
 }	
 

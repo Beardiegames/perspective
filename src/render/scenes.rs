@@ -4,8 +4,8 @@ use crate::types::*;
 use super::*;
 
 
-pub const GRID_WIDTH: i16 = 142; //90
-pub const GRID_HEIGHT: i16 = 230;
+pub const GRID_WIDTH: i16 = 17; // NOTE: must be odd numbers!!!
+pub const GRID_HEIGHT: i16 = 35; // NOTE: must be odd numbers!!!
 
 
 pub struct Scene {
@@ -79,17 +79,17 @@ fn setup_tiles() -> DrawBuffer<HexTile> {
 	for ver in 0..GRID_HEIGHT {
 	let grid_width_fact = GRID_WIDTH + ver;
 
-	let mx_offset = match (ver + 1) % 2 == 1 {
-		true => 0.0,
-		false => 1.0,
-	};
+	// let mx_offset = match (ver + 1) % 2 == 1 {
+		// true => 0.0,
+		// false => -0.5,
+	// };
 	
 	for hor in 0..grid_width_fact {
 
 		let row_offset = -0.5;
 
 		let hor_offset = grid_width_fact as f32 / 2.0 + row_offset;
-		let ver_offset = GRID_HEIGHT as f32 / 4.0;
+		let ver_offset = GRID_HEIGHT as f32 / 4.5;
 		
 		let screen_pos = TilePos {
 			hor: hor as f32 - hor_offset,
@@ -98,7 +98,7 @@ fn setup_tiles() -> DrawBuffer<HexTile> {
 
 		let mx_pos = MxPos::new( 
 			//(hor + (GRID_HEIGHT - ver) / 2) - (hor_offset * 2.0).round() as i16,
-			hor - (hor_offset - mx_offset).round() as i16, 
+			hor - hor_offset.round() as i16, 
 			ver - ver_offset.round() as i16
 		);
 

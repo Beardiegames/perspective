@@ -36,9 +36,9 @@ impl From<RealPos> for Vec3 {
 
 fn from_tile_to_real(tilepos: &TilePos) -> RealPos {
 	RealPos::new(
-		0.75 * tilepos.ver,
+		1.5 * tilepos.ver, //0.75 * tilepos.ver,
 		0.0,
-		tilepos.hor
+		2.0 * tilepos.hor // tilepos.hor
 	)
 }
 
@@ -59,9 +59,9 @@ impl From<&TilePos> for RealPos {
 
 fn from_matrix_to_real(mxpos: &MxPos) -> RealPos {
 	RealPos::new(
-		0.75 * mxpos.ver as f32,
+		1.5 * mxpos.ver as f32,//0.75 * mxpos.ver as f32,
 		0.0,
-		mxpos.hor as f32
+		2.0 * mxpos.hor as f32 // mxpos.hor as f32
 	)
 }
 

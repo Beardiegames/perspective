@@ -34,11 +34,11 @@ impl CameraController{
 	}
 	
 	pub fn set_zoom(&mut self, mut to_zoom: f32) {
-		//if to_zoom < 0.0 { to_zoom = 0.0; }
-		//else if to_zoom > 10.0 { to_zoom = 10.0; }
+		if to_zoom < 0.0 { to_zoom = 0.0; }
+		else if to_zoom > 10.0 { to_zoom = 10.0; }
 		
-		self.zoom_pos.x = -0.25 - to_zoom * 0.5;
-		self.zoom_pos.y = 0.25 + to_zoom * 0.5;
+		self.zoom_pos.x = -0.25 - to_zoom * 1.5;
+		self.zoom_pos.y = 0.25 + to_zoom * 1.5;
 
 		self.quad_cam.position = self.quad_cam.target + self.zoom_pos;
 	}

@@ -38,7 +38,7 @@ impl Perspective {
 	
 		let gui = Gui::<SpritePointers>::new();
 		
-		// let map = Map::new(142, 230)?;
+		// let map = Map::new(50, 50)?;
 		// map.write_to_file("./assets/maps/world.toml")?;
 		// return Err(MapError::GenericError);
 		
@@ -93,7 +93,7 @@ impl PerspectiveHandler for Game {
 		self.time = new_time;
 		
 		//scene.camera.set_zoom(2.0 + (time * 0.5).sin() * 2.0);
-		scene.camera.set_zoom(100.0);
+		scene.camera.set_zoom(2.5);
 		
 		// scene.camera.set_position(
 			// &TilePos::new(
@@ -105,16 +105,16 @@ impl PerspectiveHandler for Game {
 		let mut cam_pos = scene.camera.position();
 
 		if is_key_down(KeyCode::Right) { 
-			cam_pos.hor += delta_time * 10.0;
+			cam_pos.hor += delta_time * 4.0;
 		}
 		else if is_key_down(KeyCode::Left) { 
-			cam_pos.hor -= delta_time * 10.0	
+			cam_pos.hor -= delta_time * 4.0	
 		}
 		if is_key_down(KeyCode::Up) { 
-			cam_pos.ver += delta_time * 10.0
+			cam_pos.ver += delta_time * 4.0
 		}
 		else if is_key_down(KeyCode::Down) { 
-			cam_pos.ver -= delta_time * 10.0	
+			cam_pos.ver -= delta_time * 4.0	
 		}
 		scene.camera.set_position(&cam_pos);
 	}

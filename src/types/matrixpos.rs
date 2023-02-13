@@ -17,9 +17,15 @@ impl MxPos {
 // impl From TilePos
 
 fn from_tile(tile: &TilePos) -> MxPos {
+	let ver_pos = tile.ver.round() as i16;
+
+	let offset = match (ver_pos + 1) % 2 == 0 {
+		true => -0.5, false => 0.0
+	};
+	 
 	MxPos::new(
-		tile.hor.round() as i16,
-		tile.ver.round() as i16
+		(tile.hor + offset).round() as i16,
+		ver_pos
 	)
 } 
 
