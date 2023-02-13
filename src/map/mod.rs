@@ -92,6 +92,11 @@ impl Map {
 				color.b = 0.50;
 			}
 
+			if pos_x == 0 && pos_y == 0 {
+				color = Color { r: 0.75, g: 0.25, b: 0.25, a: 1.0 }
+			} 
+
+
 
 			//println!("noise: {}", noise);
 

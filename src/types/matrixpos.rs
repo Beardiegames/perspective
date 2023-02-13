@@ -2,7 +2,7 @@ use std::ops::{Add, Sub, Mul, Div};
 use super::*;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MxPos {
 	pub hor: i16,
 	pub ver: i16,

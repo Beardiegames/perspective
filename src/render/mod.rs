@@ -3,6 +3,7 @@ pub mod buffer;
 pub mod tiles;
 pub mod scenes;
 pub mod gui;
+pub mod camera;
 
 use macroquad::prelude::*;
 pub use sprites::*;
@@ -10,6 +11,8 @@ pub use buffer::*;
 pub use tiles::*;
 pub use scenes::*;
 pub use gui::*;
+pub use camera::*;
+
 use super::*;
 
 

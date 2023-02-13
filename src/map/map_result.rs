@@ -1,6 +1,7 @@
 
 #[derive(Debug)]
 pub enum MapError {
+	GenericError,
 	ReadFileFailed,
 	ParseFileFailed,
 	WriteFileFailed,

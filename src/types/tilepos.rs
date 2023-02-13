@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 use super::*;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TilePos {
 	pub hor: f32,
 	pub ver: f32,	

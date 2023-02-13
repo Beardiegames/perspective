@@ -4,78 +4,8 @@ use crate::types::*;
 use super::*;
 
 
-pub const CAM_OFFSET_Z: f32 = -5.0;
-pub const CAM_OFFSET_X: f32 = 5.0;
-pub const GRID_WIDTH: i16 = 9;
-pub const GRID_HEIGHT: i16 = 21;
-
-pub struct CameraController{
-	quad_cam: Camera3D,
-	zoom_pos: Vec3,
-}
-
-impl CameraController{
-	pub fn new() -> Self {
-		let zoom_pos = Vec3::new(CAM_OFFSET_Z, CAM_OFFSET_X, 0.0);
-	
-		Self {
-			quad_cam: Camera3D {
-		        position: zoom_pos,
-		        up: vec3(0., 1., 0.),
-		        target: vec3(0., 0., 0.),
-		        //projection: Projection::Orthographics,
-		        //fovy: 10.0,
-		        ..Default::default()
-		    },
-		    zoom_pos
-		}
-	}
-
-	pub fn zoom(&self) -> &f32 {
-		&self.zoom_pos.y
-	}
-	
-	pub fn set_zoom(&mut self, to_zoom: f32) {
-		self.zoom_pos.x = -to_zoom;
-		self.zoom_pos.y = to_zoom;
-	}
-
-	pub fn position(&mut self) -> TilePos {
-		TilePos::from(self.real_position())
-	}
-
-	pub fn real_position(&mut self) -> RealPos {
-		RealPos::from(self.quad_cam.target)
-	}
-
-	pub fn set_position(&mut self, pos: &TilePos) {
-		self.set_real_position(&RealPos::from(pos))
-	}
-
-	pub fn set_real_position(&mut self, pos: &RealPos) {
-		let target = Vec3::from(pos.clone());
-		self.quad_cam.target = target;
-		
-		let vec_pos = Vec3::from(pos.clone()) + self.zoom_pos;
-		self.quad_cam.position = vec_pos;
-	}
-
-	pub fn horzontal_mut(&mut self) -> &mut f32 {
-		&mut self.quad_cam.target.x
-	}
-
-	pub fn vertical_mut(&mut self) -> &mut f32 {
-		&mut self.quad_cam.target.x
-	}
-
-	pub fn horzontal(&self) -> &f32 {
-		&self.quad_cam.target.x
-	}
-
-	pub fn vertical(&self) -> &f32 {
-		&self.quad_cam.target.x
-	}
-}
+pub const GRID_WIDTH: i16 = 142; //90
+pub const GRID_HEIGHT: i16 = 230;
 
 
 pub struct Scene {
@@ -107,6 +37,10 @@ impl Scene {
 			tile.offset_pos(self.map_offset.clone());
 			let mx_pos = tile.get_matrix_position();
 			tile.set_color(self.map.get_at_mx(&mx_pos));
+
+			if mx_pos == MxPos::from(self.camera.position()) {
+				tile.set_color(Some(RED));
+			}
 		}
 	}
 	
@@ -124,7 +58,7 @@ impl Scene {
 		// );
 	    
 	    gl_use_default_material();
-	    draw_grid(20, 1., BLACK, GRAY);
+	    //draw_grid(20, 1., BLACK, GRAY);
 	    
 		for item in self.tiles.item_list() {
 			if let Some(_c) = item.color() {
@@ -144,17 +78,29 @@ fn setup_tiles() -> DrawBuffer<HexTile> {
 	
 	for ver in 0..GRID_HEIGHT {
 	let grid_width_fact = GRID_WIDTH + ver;
+
+	let mx_offset = match (ver + 1) % 2 == 1 {
+		true => 0.0,
+		false => 1.0,
+	};
 	
 	for hor in 0..grid_width_fact {
 
-		let offset = match ver % 2 == grid_width_fact % 2 { true => 0.75, false => 0.25 };
+		let row_offset = -0.5;
+
+		let hor_offset = grid_width_fact as f32 / 2.0 + row_offset;
+		let ver_offset = GRID_HEIGHT as f32 / 4.0;
 		
 		let screen_pos = TilePos {
-			hor: hor as f32 - grid_width_fact as f32 / 2.0 + offset,
-			ver: ver as f32 - GRID_HEIGHT as f32 / 5.0,
+			hor: hor as f32 - hor_offset,
+			ver: ver as f32 - ver_offset,
 		};
 
-		let mx_pos = MxPos { hor: hor + (GRID_HEIGHT - ver) / 2, ver };
+		let mx_pos = MxPos::new( 
+			//(hor + (GRID_HEIGHT - ver) / 2) - (hor_offset * 2.0).round() as i16,
+			hor - (hor_offset - mx_offset).round() as i16, 
+			ver - ver_offset.round() as i16
+		);
 
 		hex_buffer.define(HexTile::new(mx_pos, screen_pos, BLACK));
 	}}
