@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-//use noise::*;
 use crate::position::*;
 use crate::render::*;
 use crate::map::Map;
@@ -10,9 +9,17 @@ pub const GRID_WIDTH: i16 = 17; // NOTE: must be odd numbers!!!
 pub const GRID_HEIGHT: i16 = 35; // NOTE: must be odd numbers!!!
 
 
+pub struct Light {
+	pub pos: TilePos,
+	pub col: Color,
+	pub range: f32, 
+}
+
+
 pub struct Scene {
 	pub camera: CameraController,
 	pub map: Map,
+	pub lights: Vec<Light>,
 
 	tiles: DrawBuffer<HexTile>,
 	map_offset: TilePos,
@@ -23,6 +30,7 @@ impl Scene {
 		Scene {
 			camera: CameraController::new(),
 		    map,
+		    lights: Vec::new(),
 		    tiles: setup_tiles(),
 		    map_offset: TilePos { hor: 0.0, ver: 0.0 }
 		}	
@@ -41,11 +49,28 @@ impl Scene {
 		
 				item.offset_pos(self.map_offset.clone());
 				let mx_pos = item.get_matrix_position();
-				item.set_color(self.map.get_at_mx(&mx_pos));
+				let mut map_color = self.map.get_at_mx(&mx_pos);
 
-				if mx_pos == MxPos::from(self.camera.position()) {
-					item.set_color(Some(RED));
+				for light in &self.lights {
+					if let Some(c) = &mut map_color {
+						let dist_to_tile = item.position().distance(&light.pos);
+						
+						if dist_to_tile < light.range {
+							let p_range = light.range.powi(2);
+							let amount = (1.0 / p_range) * (p_range - dist_to_tile.powi(2));
+							
+							c.r += (light.col.r * amount).clamp(0.0, 1.0);
+							c.g += (light.col.g * amount).clamp(0.0, 1.0);
+							c.b += (light.col.b * amount).clamp(0.0, 1.0);
+						}
+					}
 				}
+				
+				item.set_color(map_color);
+
+				// if mx_pos == MxPos::from(self.camera.position()) {
+					// item.set_color(Some(RED));
+				// }
 
 				stage = item.color().is_some();
 			}

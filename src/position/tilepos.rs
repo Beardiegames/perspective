@@ -21,6 +21,13 @@ impl TilePos {
 		self.ver = self.ver.round();
 		self
 	}
+
+	pub fn distance(&self, other: &TilePos) -> f32 {
+		let a = (other.hor - self.hor).abs();
+		let b = (other.ver - self.ver).abs();
+		
+		(a.powi(2) + b.powi(2)).sqrt()
+	}
 }
 
 

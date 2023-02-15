@@ -12,8 +12,11 @@ use macroquad::prelude::*;
 use map::*;
 use targets::*;
 use sprite_loader::SpritePointers;
+use position::*;
+
 
 pub trait PerspectiveHandler {
+	fn initialize(&mut self, scene: &mut Scene, gui: &mut Gui<SpritePointers>);
 	fn update_scene(&mut self, scene: &mut Scene);
 	fn update_gui(&mut self, gui: &mut Gui<SpritePointers>);
 }
@@ -52,6 +55,8 @@ impl Perspective {
 	pub async fn run<T>(&mut self, mut game: T) -> Result<(), MapError> 
 		where T: PerspectiveHandler
 	{
+		game.initialize(&mut self.scene, &mut self.gui);
+		
 	    'game: loop {
 	    	// input
 	    	if is_key_down(KeyCode::Escape) { break 'game; }
@@ -88,13 +93,22 @@ impl Game {
 
 impl PerspectiveHandler for Game {
 
+	fn initialize(&mut self, scene: &mut Scene, gui: &mut Gui<SpritePointers>) {
+		scene.camera.set_zoom(2.5);
+		scene.lights.push(Light {
+			pos: TilePos::new(10.0, 10.0),
+			col: Color::new(0.6, 0.1, 0.1, 1.0),
+			range: 5.0,
+		});
+	}
+
 	fn update_scene(&mut self, scene: &mut Scene) {
 		let new_time = macroquad::time::get_time() as f32;
 		let delta_time = new_time - self.time;
 		self.time = new_time;
 		
 		//scene.camera.set_zoom(2.0 + (time * 0.5).sin() * 2.0);
-		scene.camera.set_zoom(2.5);
+		
 		
 		// scene.camera.set_position(
 			// &TilePos::new(
