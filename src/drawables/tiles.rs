@@ -1,15 +1,24 @@
 use macroquad::prelude::*;
 use macroquad::models::Vertex;
-use crate::types::*;
+use crate::position::*;
+use crate::render::*;
 
 
 pub struct HexTile {
 	pub mesh: Mesh,
+	
 	root: Mesh,
 	mx_pos: MxPos,
 	screen_pos: TilePos,
 	offset: TilePos,
 	col: Option<Color>,
+}
+
+impl Drawable for HexTile {
+	fn draw(&self) {
+		gl_use_default_material();
+		draw_mesh(&self.mesh);
+	}
 }
 
 impl HexTile {

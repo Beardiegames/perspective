@@ -1,7 +1,9 @@
 use macroquad::prelude::*;
 //use noise::*;
-use crate::types::*;
-use super::*;
+use crate::position::*;
+use crate::render::*;
+use crate::map::Map;
+use crate::drawables::HexTile;
 
 
 pub const GRID_WIDTH: i16 = 17; // NOTE: must be odd numbers!!!
@@ -33,42 +35,29 @@ impl Scene {
 		self.map_offset.hor = self.map_offset.hor.round();
 		self.map_offset.ver = (self.map_offset.ver * 0.5).round() * 2.0;
 
-		for tile in self.tiles.mut_item_list() {
-			tile.offset_pos(self.map_offset.clone());
-			let mx_pos = tile.get_matrix_position();
-			tile.set_color(self.map.get_at_mx(&mx_pos));
+		let mut stage = false;
+		for idx in 0..self.tiles.number_of_prefabs() {
+			if let Some(item) = self.tiles.edit_prefab_at(&idx) {
+		
+				item.offset_pos(self.map_offset.clone());
+				let mx_pos = item.get_matrix_position();
+				item.set_color(self.map.get_at_mx(&mx_pos));
 
-			if mx_pos == MxPos::from(self.camera.position()) {
-				tile.set_color(Some(RED));
+				if mx_pos == MxPos::from(self.camera.position()) {
+					item.set_color(Some(RED));
+				}
+
+				stage = item.color().is_some();
+			}
+
+			if stage {
+				self.tiles.stage_by_index(idx);
 			}
 		}
 	}
-	
+
 	pub fn draw(&mut self) {
-		set_camera(&self.camera.quad_cam);
-		// set_camera(
-			// &Camera3D {
-		        // position: vec3(CAM_OFFSET_Z, CAM_OFFSET_X, 0.0),
-		        // up: vec3(0., 1., 0.),
-		        // target: vec3(0., 0., 0.),
-		        // //projection: Projection::Orthographics,
-		        // //fovy: 10.0,
-		        // ..Default::default()
-		    // }
-		// );
-	    
-	    gl_use_default_material();
-	    //draw_grid(20, 1., BLACK, GRAY);
-	    
-		for item in self.tiles.item_list() {
-			if let Some(_c) = item.color() {
-				draw_mesh(&item.mesh);
-			}
-			
-			// let pos = item.position();
-			// draw_text(text: &str, x: f32, y: f32, font_size: f32, color: Color)
-	    }
-	    self.tiles.clear_queue();
+		draw_buffer_3d(&mut self.tiles, &self.camera);
 	}
 }
 
@@ -79,13 +68,7 @@ fn setup_tiles() -> DrawBuffer<HexTile> {
 	for ver in 0..GRID_HEIGHT {
 	let grid_width_fact = GRID_WIDTH + ver;
 
-	// let mx_offset = match (ver + 1) % 2 == 1 {
-		// true => 0.0,
-		// false => -0.5,
-	// };
-	
 	for hor in 0..grid_width_fact {
-
 		let row_offset = -0.5;
 
 		let hor_offset = grid_width_fact as f32 / 2.0 + row_offset;

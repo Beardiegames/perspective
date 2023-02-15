@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use super::*;
 
 
 pub struct DrawPointer<T> { 
@@ -6,21 +7,27 @@ pub struct DrawPointer<T> {
 	_marker: PhantomData<T>,
 }
 
-pub struct DrawBuffer<T> {
+
+pub struct DrawBuffer<T: Drawable> {
+	pub base_material: Option<Material>,
+	pub render_queue: Vec<usize>,
+
 	prefab_items: Vec<T>,
-	render_queue: Vec<usize>,
 }
 
-impl<T> DrawBuffer<T> {
+impl<T> DrawBuffer<T> 
+	where T: Drawable
+{
 	pub fn new(capacity: usize) -> Self {
 		DrawBuffer {
+			base_material: None,
 		    render_queue: Vec::with_capacity(capacity),
 			prefab_items: Vec::new(),
 		}
 	}
 	
 	pub fn define(&mut self, draw_item: T) -> DrawPointer<T> {
-		let pointer = DrawPointer { 
+		let pointer = DrawPointer::<T> { 
 			idx: self.prefab_items.len(),
 			_marker: PhantomData,
 		};
@@ -32,31 +39,48 @@ impl<T> DrawBuffer<T> {
 		self.render_queue.push(draw_ptr.idx);
 	}
 
-	pub fn edit(&mut self, draw_ptr: &DrawPointer<T>) -> &mut T {
+	pub fn stage_by_index(&mut self, idx: usize) {
+		self.render_queue.push(idx);
+	}
+	
+
+	pub fn edit_prefab(&mut self, draw_ptr: &DrawPointer<T>) -> &mut T {
 		&mut self.prefab_items[draw_ptr.idx]
 	}
 
-	pub fn read(&mut self, draw_ptr: &DrawPointer<T>) -> &T {
+	pub fn read_prefab(&mut self, draw_ptr: &DrawPointer<T>) -> &T {
 		&self.prefab_items[draw_ptr.idx]
 	}
 
-	pub fn by_index(&self, queue_idx: &usize) -> &T {
-		&self.prefab_items[*queue_idx]
-	}
-
-	pub fn queue(&self) -> &Vec<usize> {
-		&self.render_queue
-	}
-
-	pub fn clear_queue(&mut self) {
-		self.render_queue.clear();
-	}
-
-	pub fn item_list(&self) -> &Vec<T> {
+	pub fn list_prefabs(&self) -> &Vec<T> {
 		&self.prefab_items
 	}
 
-	pub fn mut_item_list(&mut self) -> &mut Vec<T> {
+	pub fn list_prefabs_mut(&mut self) -> &mut Vec<T> {
 		&mut self.prefab_items
+	}
+
+	pub fn read_prefab_at(&self, queue_idx: &usize) -> Option<&T> {
+		match *queue_idx < self.prefab_items.len() {
+			true => Some(&self.prefab_items[*queue_idx]),
+			false => None,
+		}
+	}
+
+	pub fn edit_prefab_at(&mut self, queue_idx: &usize) -> Option<&mut T> {
+			match *queue_idx < self.prefab_items.len() {
+				true => Some(&mut self.prefab_items[*queue_idx]),
+				false => None,
+			}
+		}
+
+	pub fn number_of_prefabs(&self) -> usize {
+		self.prefab_items.len()
+	}
+
+	pub fn draw_queue(&self) {
+		for i in &self.render_queue {
+			self.prefab_items[*i].draw();
+		}
 	}
 }

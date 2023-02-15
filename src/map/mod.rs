@@ -11,7 +11,7 @@ pub use map_value::*;
 use serde::*;
 use macroquad::prelude::*;
 use noise::*;
-use crate::types::*;
+use crate::position::*;
 //use super::*;
 
 

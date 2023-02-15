@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 use crate::render::*;
+use crate::drawables::*;
+use crate::targets::*;
 
 pub struct SpritePointers {
 	pub grass: DrawPointer<Sprite>,
@@ -15,7 +17,7 @@ impl GuiCustoms for SpritePointers {
 		let wall1 = wall(sprites, gl_pipe);
 		let wall2 = wall(sprites, gl_pipe);	
 		{
-	   		let grass_obj = sprites.edit(&grass);
+	   		let grass_obj = sprites.edit_prefab(&grass);
 	   		grass_obj.pos.x = 100.;
 	   		grass_obj.pos.y = 50.;
 		}

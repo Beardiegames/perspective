@@ -1,17 +1,17 @@
 mod config;
-mod sprite_loader;
 mod shaders;
 mod render;
-mod types;
+mod position;
 mod map;
+mod targets;
+mod drawables;
+mod sprite_loader;
 
 use config::*;
 use macroquad::prelude::*;
-use render::*;
-use sprite_loader::*;
 use map::*;
-use types::*;
-
+use targets::*;
+use sprite_loader::SpritePointers;
 
 pub trait PerspectiveHandler {
 	fn update_scene(&mut self, scene: &mut Scene);
@@ -43,6 +43,7 @@ impl Perspective {
 		// return Err(MapError::GenericError);
 		
 		let map = Map::read_from_file("./assets/maps/world.toml")?;
+		//println!("#MAP: {:?}", map);
 		let scene = Scene::new(map);
 		
 		Ok(Perspective { gui, scene })
@@ -63,7 +64,7 @@ impl Perspective {
 			self.scene.update_floor_tiles();
 			
 			// draw
-			clear_background(LIGHTGRAY);        
+			clear_background(LIGHTGRAY);       
 	        self.scene.draw();
 	        self.gui.draw();
 	        
@@ -124,11 +125,11 @@ impl PerspectiveHandler for Game {
 		    	
 	   	let x1 = 100. + time.cos() * 50.;
 	   	let y1 = 50. + time.sin() * 50.;
-	   	gui.sprites.edit(&gui.customs.wall1).pos = Vec2::new(x1, y1);
+	   	gui.sprites.edit_prefab(&gui.customs.wall1).pos = Vec2::new(x1, y1);
 
 	   	let x2 = x1 + (time*2.5).cos() * 30.;
 	   	let y2 = y1 + (time*2.5).sin() * 30.;
-	   	gui.sprites.edit(&gui.customs.wall2).pos = Vec2::new(x2, y2);
+	   	gui.sprites.edit_prefab(&gui.customs.wall2).pos = Vec2::new(x2, y2);
 
 		gui.sprites.stage(&gui.customs.grass);
 		gui.sprites.stage(&gui.customs.wall1);

@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 //use noise::*;
-use crate::types::*;
+use crate::position::*;
 
 
 pub const CAM_OFFSET_Z: f32 = -6.0;
