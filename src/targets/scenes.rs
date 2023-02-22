@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 use crate::position::*;
 use crate::render::*;
-use crate::map::Map;
+use crate::map::*;
 use crate::drawables::HexTile;
 
 
@@ -13,6 +13,14 @@ pub struct Light {
 	pub pos: TilePos,
 	pub col: Color,
 	pub range: f32, 
+}
+
+impl Light {
+	pub fn add_to_color(&self, color: &mut Color, amount: f32) {
+		color.r += (self.col.r * amount).clamp(0.0, 1.0);
+		color.g += (self.col.g * amount).clamp(0.0, 1.0);
+		color.b += (self.col.b * amount).clamp(0.0, 1.0);
+	}
 }
 
 
@@ -38,44 +46,47 @@ impl Scene {
 
 	pub fn update_floor_tiles(&mut self) {
 		self.map_offset = self.camera.position();
-
-		// jump out of screen tiles
 		self.map_offset.hor = self.map_offset.hor.round();
 		self.map_offset.ver = (self.map_offset.ver * 0.5).round() * 2.0;
 
-		let mut stage = false;
 		for idx in 0..self.tiles.number_of_prefabs() {
-			if let Some(item) = self.tiles.edit_prefab_at(&idx) {
-		
-				item.offset_pos(self.map_offset.clone());
-				let mx_pos = item.get_matrix_position();
-				let mut map_color = self.map.get_at_mx(&mx_pos);
+			let mut tile_changed = false;
+			
+			if let Some(tile) = self.tiles.edit_prefab_at(&idx) {
+			
+				tile.offset_position = self.map_offset.clone();
+				let mx_pos = tile.get_matrix_position();
+				
+				if let Some(map_value) = self.map.get_at_mx(&mx_pos) {
 
-				for light in &self.lights {
-					if let Some(c) = &mut map_color {
-						let dist_to_tile = item.position().distance(&light.pos);
+					// update lights & terrain color
+					let mut map_color = map_value.color();
+					
+					for light in &self.lights {
+						let dist_to_tile = tile.world_position().distance(&light.pos);
 						
 						if dist_to_tile < light.range {
 							let p_range = light.range.powi(2);
 							let amount = (1.0 / p_range) * (p_range - dist_to_tile.powi(2));
-							
-							c.r += (light.col.r * amount).clamp(0.0, 1.0);
-							c.g += (light.col.g * amount).clamp(0.0, 1.0);
-							c.b += (light.col.b * amount).clamp(0.0, 1.0);
+							light.add_to_color(&mut map_color, amount);
 						}
 					}
+					tile.color = map_color;	
+
+					// update terrain height
+					tile.height = map_value.height;
+				}
+
+				for adj in self.map.adjacent_to(&mx_pos) {
+					
 				}
 				
-				item.set_color(map_color);
+				tile.update_mesh();		 	
+				tile_changed = true;
 
-				// if mx_pos == MxPos::from(self.camera.position()) {
-					// item.set_color(Some(RED));
-				// }
-
-				stage = item.color().is_some();
+				
 			}
-
-			if stage {
+			if tile_changed { 
 				self.tiles.stage_by_index(idx);
 			}
 		}
@@ -110,7 +121,7 @@ fn setup_tiles() -> DrawBuffer<HexTile> {
 			ver - ver_offset.round() as i16
 		);
 
-		hex_buffer.define(HexTile::new(mx_pos, screen_pos, BLACK));
+		hex_buffer.define(HexTile::new(mx_pos, screen_pos));
 	}}
 	
 	hex_buffer

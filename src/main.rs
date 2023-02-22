@@ -94,7 +94,9 @@ impl Game {
 impl PerspectiveHandler for Game {
 
 	fn initialize(&mut self, scene: &mut Scene, gui: &mut Gui<SpritePointers>) {
-		scene.camera.set_zoom(2.5);
+		scene.camera.set_zoom(10.0);
+		scene.camera.set_position(&TilePos::new(10.0, 10.0));
+
 		scene.lights.push(Light {
 			pos: TilePos::new(10.0, 10.0),
 			col: Color::new(0.6, 0.1, 0.1, 1.0),
@@ -107,16 +109,7 @@ impl PerspectiveHandler for Game {
 		let delta_time = new_time - self.time;
 		self.time = new_time;
 		
-		//scene.camera.set_zoom(2.0 + (time * 0.5).sin() * 2.0);
-		
-		
-		// scene.camera.set_position(
-			// &TilePos::new(
-				// 32.0 + (time * 0.5).sin() * 44.0,
-				// 35.0 + (time * 0.5).cos() * 36.0,
-			// )
-		// );
-
+		// move camera
 		let mut cam_pos = scene.camera.position();
 
 		if is_key_down(KeyCode::Right) { 
@@ -132,6 +125,18 @@ impl PerspectiveHandler for Game {
 			cam_pos.ver -= delta_time * 4.0	
 		}
 		scene.camera.set_position(&cam_pos);
+
+		// mouse to world position
+		let (mousex, mousey) = macroquad::input::mouse_position();
+		let (centerx, centery) = (screen_width() / 2.0, screen_height() / 0.2);
+		let tilex = (mousex as f64 - centerx as f64).powf(1.5) / 1000.0;
+		//let tiley = -((mousey as f64 / 100.0).powf(4.0)/100.0 - (centery as f64 / 100.0).powf(4.0)/100.0) / 1000.0;
+		let mut tiley = -(mousey - centery) / centery;
+		//tiley = (-0.5 + tiley).powi(4);
+		tiley *= 1.0;
+		
+		scene.lights[0].pos = cam_pos + TilePos::new(tilex as f32, tiley as f32);
+		//println!("mouse: {}-{}", mousex - centerx, mousey - centery);
 	}
 
 	fn update_gui(&mut self, gui: &mut Gui<SpritePointers>) {

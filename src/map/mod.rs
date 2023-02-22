@@ -18,7 +18,7 @@ use crate::position::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Map {
 	width: i16,
-	height: i16,
+	height: i16,	
 	matrix: Vec<MapValue>,
 }
 
@@ -43,14 +43,14 @@ impl Map {
 		Ok(map)
 	}
 
-	pub fn get_at_mx(&self, mx: &MxPos)-> Option<Color> {
+	pub fn get_at_mx(&self, mx: &MxPos) -> Option<&MapValue> {
 		if mx.hor >= 0 && mx.hor < self.width 
 		&& mx.ver >= 0 && mx.ver < self.height 
 		{
 			let idx = (mx.ver * self.width + mx.hor % self.width) as usize;
 					
 			match idx < self.matrix.len() {
-				true => Some(self.matrix[idx].color()),
+				true => Some(&self.matrix[idx]),
 				false => None,
 			}
 		}
@@ -59,19 +59,32 @@ impl Map {
 		}		
 	}
 
+	pub fn adjacent_to(&self, mx: &MxPos) -> [Option<&MapValue>; 6] {
+		[
+			self.get_at_mx(&(mx + &MxPos { hor: 1, ver: -1 })), // top-right
+			self.get_at_mx(&(mx + &MxPos { hor: 1, ver: 0 })),	// right
+			self.get_at_mx(&(mx + &MxPos { hor: 0, ver: 1 })),	// btm-right
+			self.get_at_mx(&(mx + &MxPos { hor: -1, ver: 1 })),	// btm-left
+			self.get_at_mx(&(mx + &MxPos { hor: -1, ver: 0 })),	// left
+			self.get_at_mx(&(mx + &MxPos { hor: 0, ver: -1 })),	// top-left
+		]
+	}
+
 	pub fn random_matrix_values(&mut self) {
 		let perlin = Perlin::new(0u32);
 		let quality = 3.0;
 		let amount = 10.0;
 		let mut color = Color { r: 0.25, g: 0.5, b: 0.5, a: 1.0 };
+		let mut height = 0.0;
 		
 		for i in 0..self.matrix.len() as i16 {
 			let pos_x = i % self.width;
 			let pos_y = i / self.width;
 			
 			let point: [f64; 2] = [pos_x as f64 / quality, pos_y as f64 / quality]; 
-			let noise = 0.75 + (perlin.get(point) / amount) as f32;
-			color.g = noise;
+			height = perlin.get(point) as f32;
+			color.g = 0.75 + (height / amount);
+			
 
 			if pos_x == 0 {
 				color.r = 1.0;
@@ -94,13 +107,12 @@ impl Map {
 
 			if pos_x == 0 && pos_y == 0 {
 				color = Color { r: 0.75, g: 0.25, b: 0.25, a: 1.0 }
-			} 
-
-
+			}
 
 			//println!("noise: {}", noise);
 
 			if i >= 0 {
+				self.matrix[i as usize].height = height;
 				self.matrix[i as usize].set_color(&color);
 			}
 		}

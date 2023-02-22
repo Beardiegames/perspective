@@ -9,7 +9,7 @@ pub const SPRITE_SIZE: f32 = 32.;
 pub fn window_conf() -> Conf {
     Conf {
         window_title: "Game".to_owned(),
-        fullscreen: true,
+        fullscreen: false,
         window_resizable: false,
         window_width: WINDOW_WIDTH,
         window_height: WINDOW_HEIGHT,

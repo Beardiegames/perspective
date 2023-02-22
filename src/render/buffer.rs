@@ -11,8 +11,7 @@ pub struct DrawPointer<T> {
 pub struct DrawBuffer<T: Drawable> {
 	pub base_material: Option<Material>,
 	pub render_queue: Vec<usize>,
-
-	prefab_items: Vec<T>,
+	pub prefab_items: Vec<T>,
 }
 
 impl<T> DrawBuffer<T> 

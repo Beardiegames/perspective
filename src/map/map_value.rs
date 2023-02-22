@@ -5,7 +5,8 @@ use macroquad::prelude::*;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MapValue {
 	pub pos: [u16; 2],
-	pub color: [u8; 4], 
+	pub color: [u8; 4],
+	pub height: f32, 
 }
 
 impl MapValue {
