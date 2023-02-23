@@ -6,7 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-macroquad = "*"
+bevy = { version = "*", features = ["dynamic"] }
+bevy_obj="*"
+hexx="*"
+#macroquad = "*"
 noise = "*"
 toml = "*"
 serde = { version = "*", features = ["derive"] }
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
