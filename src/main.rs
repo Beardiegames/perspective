@@ -28,11 +28,13 @@ pub fn main() {
         }))
         .add_plugin(ObjPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup)
+        .add_startup_system(setup_tiles)
+        .add_startup_system(setup_lights)
         .add_system(bevy::window::close_on_esc)
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.1))
+                .with_system(realtime_tile_spawner)
                 .with_system(animate_light),
         )
         .run();
@@ -58,6 +60,13 @@ fn animate_light(
 
 #[derive(Component)]
 pub struct DynamicLight;
+
+fn realtime_tile_spawner(
+    //mut commands: Commands,
+    tiles: ResMut<Tiles>,
+) {
+    let some_tilepos = tiles.layout.world_pos_to_hex(Vec2::new(0.0, 0.0));
+}
 
 // fn animate_rings(
 //     mut commands: Commands,
@@ -88,61 +97,11 @@ pub struct DynamicLight;
 // }
 
 
-fn setup(
+fn setup_lights(
     mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
+    //mut materials: ResMut<Assets<StandardMaterial>>,
+    //asset_server: Res<AssetServer>,
 ) {
-
-	let tile = asset_server.load("models/tile_basic.obj");
-	let default_material = materials.add(Color::WHITE.into());
-	
-	let grid = HexLayout {
-            orientation: HexOrientation::pointy(),
-            origin: Vec2::ZERO,
-            hex_size: Vec2::splat(1.0),
-    };
-	
-	let tiles: HashMap<Hex, Entity> = shapes::hexagon(Hex::ZERO, 10)
-        .map(|hex| {
-            let pos = grid.hex_to_world_pos(hex);
-            let id = commands
-                .spawn(PbrBundle {
-	               mesh: tile.clone(),
-	               material: default_material.clone(),
-	               transform: Transform::from_xyz(pos.x, 0.0, pos.y),
-	               ..default()
-	               })
-                .id();
-            (hex, id)
-        })
-        .collect();
-    
-    // directional 'sun' light
-    const HALF_SIZE: f32 = 10.0;
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            // Configure the projection to better fit the scene
-            shadow_projection: OrthographicProjection {
-                left: -HALF_SIZE,
-                right: HALF_SIZE,
-                bottom: -HALF_SIZE,
-                top: HALF_SIZE,
-                near: -10.0 * HALF_SIZE,
-                far: 10.0 * HALF_SIZE,
-                ..default()
-            },
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 10.0, 0.0),
-            rotation: Quat::from_rotation_x(3.14),
-            ..default()
-        },
-        ..default()
-    });
-    
     // red point light
     let point_light_id = commands.spawn(
                 PointLightBundle {
@@ -160,19 +119,62 @@ fn setup(
     
     commands.entity(point_light_id)
         .insert(DynamicLight);
+}
+
+#[derive(Resource)]
+pub struct TileMeshes {
+    floor: Handle<Mesh>,
+}
+
+impl TileMeshes {
+    fn from_load(asset_server: Res<AssetServer>) -> Self {
+        TileMeshes {        
+            floor: asset_server.load("models/tiles/tile_floor.obj"),
+        }
+    }
+}
+
+#[derive(Resource)]
+pub struct Tiles {
+    layout: HexLayout,
+    meshes: TileMeshes,
+    material: Handle<StandardMaterial>,
+    grid: HashMap<Hex, Entity>,
+}
+
+fn setup_tiles(
+    mut commands: Commands, 
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>
+) {
+    let layout = HexLayout {
+        orientation: HexOrientation::pointy(),
+        origin: Vec2::ZERO,
+        hex_size: Vec2::splat(1.0),
+    };
+    
+    let meshes = TileMeshes::from_load(asset_server);
+    let material = materials.add(Color::WHITE.into());
+
+    let grid = shapes::hexagon(Hex::ZERO, 10)
+        .map(|hex| {
+            let pos = layout.hex_to_world_pos(hex);
+            let id = commands
+                .spawn(PbrBundle {
+	               mesh: meshes.floor.clone(),
+	               material: material.clone(),
+	               transform: Transform::from_xyz(pos.x, 0.0, pos.y),
+	               ..default()
+	               })
+                .id();
+            (hex, id)
+        })
+        .collect();
         
-        // .with_children(|builder| {
-        //     builder.spawn(PbrBundle {
-        //         mesh: meshes.add(Mesh::from(shape::UVSphere {
-        //             radius: 0.1,
-        //             ..default()
-        //         })),
-        //         material: materials.add(StandardMaterial {
-        //             base_color: Color::RED,
-        //             emissive: Color::rgba_linear(100.0, 0.0, 0.0, 0.0),
-        //             ..default()
-        //         }),
-        //         ..default()
-        //     });
-        // });
+    commands.insert_resource(Tiles {
+            layout,
+            meshes,
+            material,
+            grid,
+    });
 }
