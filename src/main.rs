@@ -129,7 +129,7 @@ pub struct TileMeshes {
 impl TileMeshes {
     fn from_load(asset_server: Res<AssetServer>) -> Self {
         TileMeshes {        
-            floor: asset_server.load("models/tiles/tile_floor.obj"),
+            floor: asset_server.load("models/tiles/tile-floor.obj"),
         }
     }
 }
