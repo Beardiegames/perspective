@@ -1,29 +1,34 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+use bevy::asset::LoadState;
+use bevy::reflect::GetPath;
+use bevy::render::renderer::RenderQueue;
 // use bevy::render::mesh::Indices;
 // use bevy::render::render_resource::PrimitiveTopology;
 use bevy::time::FixedTimestep;
-
 use bevy_obj::*;
 use hexx::shapes;
 use hexx::*;
+use noise::*;
 
 
 pub fn main() {
+    let window = WindowDescriptor {
+        title: "I am a window!".to_string(),
+        width: 960.,
+        height: 540.,
+        mode: WindowMode::Windowed,
+        ..default()
+    };
+    
     App::new()
         .insert_resource(AmbientLight {
             brightness: 1.0,
             ..default()
         })
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: "I am a window!".to_string(),
-                width: 960.,
-                height: 540.,
-                mode: WindowMode::Windowed,
-                ..default()
-            },
+            window,
             ..default()
         }))
         .add_plugin(ObjPlugin)
@@ -34,7 +39,8 @@ pub fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.1))
-                .with_system(realtime_tile_spawner)
+                .with_system(tile_transform_system)
+                //.with_system(tile_material_system)
                 .with_system(animate_light),
         )
         .run();
@@ -43,7 +49,7 @@ pub fn main() {
 /// 3D Orthogrpahic camera setup
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 5.0, -17.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, 10.0, -20.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
@@ -61,85 +67,128 @@ fn animate_light(
 #[derive(Component)]
 pub struct DynamicLight;
 
-fn realtime_tile_spawner(
-    //mut commands: Commands,
-    tiles: ResMut<Tiles>,
-) {
-    let some_tilepos = tiles.layout.world_pos_to_hex(Vec2::new(0.0, 0.0));
+fn tile_transform_system(
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut tile_queue: Query<(&mut Transform, &Tile)>,
+    noise: Res<PerlinNoise>,
+) {    
+    for (mut trans, tile) in &mut tile_queue {
+        let point = [tile.hex.x() as f64 / 10.0, tile.hex.y() as f64 / 10.0];
+        let height = noise.perlin.get(point) as f32;
+        
+        trans.translation = Vec3::new(
+            trans.translation.x, 
+            height.round() * 0.5,
+            trans.translation.z, 
+        ); 
+        
+        if let Some(m) = materials.get_mut(&tile.material) {
+            m.base_color = Color::Rgba { red: height, green: height, blue: 0.5, alpha: 1.0 }
+        }
+    }
 }
 
-// fn animate_rings(
-//     mut commands: Commands,
-//     map: Res<Map>,
-//     mut highlighted_hexes: Local<HighlightedHexes>,
+// fn tile_material_system(
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+//     tiles: ResMut<Tiles>,
 // ) {
-//     // Clear highlighted hexes materials
-//     for entity in highlighted_hexes
-//         .hexes
-//         .iter()
-//         .filter_map(|h| map.entities.get(h))
-//     {
-//         commands
-//             .entity(*entity)
-//             .insert(map.default_material.clone());
-//     }
-//     highlighted_hexes.ring += 1;
-//     if highlighted_hexes.ring > MAP_RADIUS {
-//         highlighted_hexes.ring = 0;
-//     }
-//     highlighted_hexes.hexes = Hex::ZERO.ring(highlighted_hexes.ring);
-//     // Draw a ring
-//     for h in &highlighted_hexes.hexes {
-//         if let Some(e) = map.entities.get(h) {
-//             commands.entity(*e).insert(map.highlighted_material.clone());
+//     let perlin = tiles.perlin;
+    
+//     for (hex, tile) in &tiles.grid {
+//         let point = [hex.x() as f64 / 10.0, hex.y() as f64 / 10.0];
+//         let height = perlin.get(point).round() as f32;// * 0.5;
+        
+//         if let Some(m) = materials.get_mut(&tile.material) {
+//             m.base_color = Color::Rgba { red: height, green: height, blue: 0.5, alpha: 1.0 }
 //         }
 //     }
 // }
 
+// fn realtime_tile_spawner(
+//     mut commands: Commands,
+//     tiles: ResMut<Tiles>,
+// ) {
+//     let perlin = tiles.perlin;
+     
+//     //let some_tilepos = tiles.layout.world_pos_to_hex(Vec2::new(0.0, 0.0));
+//     for (hex, entity) in &tiles.grid {
+//         let point = [hex.x() as f64, hex.y() as f64];
+//         let height = perlin.get(point);
+        
+//         if let Some(obj) = commands.get_entity(*entity) {
+//             obj.
+//         }
+//     }
+// }
 
-fn setup_lights(
-    mut commands: Commands,
-    //mut materials: ResMut<Assets<StandardMaterial>>,
-    //asset_server: Res<AssetServer>,
-) {
-    // red point light
-    let point_light_id = commands.spawn(
-                PointLightBundle {
-                // transform: Transform::from_xyz(5.0, 8.0, 2.0),
-                transform: Transform::from_xyz(1.0, 2.0, 0.0),
-                point_light: PointLight {
-                    intensity: 600.0, // 1600.0 lumens - roughly a 100W non-halogen incandescent bulb
-                    color: Color::RED,
-                    shadows_enabled: true,
-                    ..default()
-                },
-                ..default()
-            }
-        ).id();
+#[derive(Clone)]
+pub struct TileShape {
+    idx: usize,
+    entity: Entity,
+}
+
+impl TileShape {
     
-    commands.entity(point_light_id)
-        .insert(DynamicLight);
+}
+
+#[derive(Component, Clone)]
+pub struct Tile {
+    hex: Hex,
+    material: Handle<StandardMaterial>,
+    shape: TileShape,
+}
+
+impl Tile {
+    fn set_shape(&mut self, commands: &mut Commands, prefabs: &TileBrefabs) {
+        let bundle = PbrBundle {
+	       mesh: prefabs.floor.clone(),
+	       material: self.material.clone(),
+	       transform: Transform::from_xyz(
+	           self.hex.x as f32, 
+	           0.0, 
+	           self.hex.y as f32
+	           ),
+	       ..default()
+	   };
+	   
+	   let entity = commands
+            .spawn(bundle)
+            .insert(self.clone())
+            .id();
+    }
 }
 
 #[derive(Resource)]
-pub struct TileMeshes {
-    floor: Handle<Mesh>,
+pub struct PerlinNoise {
+    pub perlin: Perlin,
 }
 
-impl TileMeshes {
-    fn from_load(asset_server: Res<AssetServer>) -> Self {
-        TileMeshes {        
-            floor: asset_server.load("models/tiles/tile-floor.obj"),
+#[derive(Resource)]
+pub struct TileBrefabs {
+    floor: Handle<Mesh>,
+    slope1: Handle<Mesh>,
+    slope2: Handle<Mesh>,
+    slope3: Handle<Mesh>,
+    slope4: Handle<Mesh>,
+}
+
+impl TileBrefabs {
+    fn from_load(asset_server: &Res<AssetServer>) -> Self {
+        TileBrefabs {        
+            floor: asset_server.load("models/tiles/full.obj"),
+            slope1: asset_server.load("models/tiles/slope-1.obj"),
+            slope2: asset_server.load("models/tiles/slope-2.obj"),
+            slope3: asset_server.load("models/tiles/slope-3.obj"),
+            slope4: asset_server.load("models/tiles/slope-4.obj"),
         }
     }
 }
 
 #[derive(Resource)]
 pub struct Tiles {
-    layout: HexLayout,
-    meshes: TileMeshes,
-    material: Handle<StandardMaterial>,
-    grid: HashMap<Hex, Entity>,
+    layout: HexLayout, 
+    prefabs: TileBrefabs, 
+    pub grid: HashMap<Hex, Tile>,
 }
 
 fn setup_tiles(
@@ -153,28 +202,50 @@ fn setup_tiles(
         hex_size: Vec2::splat(1.0),
     };
     
-    let meshes = TileMeshes::from_load(asset_server);
-    let material = materials.add(Color::WHITE.into());
+    let prefabs = TileBrefabs::from_load(&asset_server);
+    let mesh = asset_server.load("models/tiles/full.obj");
 
-    let grid = shapes::hexagon(Hex::ZERO, 10)
+    let grid = shapes::hexagon(Hex::ZERO, 5)
         .map(|hex| {
             let pos = layout.hex_to_world_pos(hex);
-            let id = commands
-                .spawn(PbrBundle {
-	               mesh: meshes.floor.clone(),
-	               material: material.clone(),
-	               transform: Transform::from_xyz(pos.x, 0.0, pos.y),
-	               ..default()
-	               })
-                .id();
-            (hex, id)
+            let material = materials.add(Color::WHITE.into());
+            
+            
+	       
+	       let tile = Tile { 
+                hex: hex.clone(),
+                material: material.clone(),
+            };
+
+            
+
+            (hex, tile)
         })
         .collect();
         
-    commands.insert_resource(Tiles {
-            layout,
-            meshes,
-            material,
-            grid,
-    });
+    commands.insert_resource(Tiles {layout, prefabs, grid });
+    commands.insert_resource(PerlinNoise{ perlin: Perlin::new(0u32) });
+}
+
+
+fn setup_lights(
+    mut commands: Commands,
+) {
+    // red point light
+    let point_light_id = commands.spawn(
+                PointLightBundle {
+                // transform: Transform::from_xyz(5.0, 8.0, 2.0),
+                transform: Transform::from_xyz(1.0, 20.0, 0.0),
+                point_light: PointLight {
+                    intensity: 600.0, // 1600.0 lumens - roughly a 100W non-halogen incandescent bulb
+                    color: Color::RED,
+                    shadows_enabled: true,
+                    ..default()
+                },
+                ..default()
+            }
+        ).id();
+    
+    commands.entity(point_light_id)
+        .insert(DynamicLight);
 }
