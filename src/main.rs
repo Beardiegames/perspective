@@ -1,11 +1,6 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
-use bevy::asset::LoadState;
-use bevy::reflect::GetPath;
-use bevy::render::renderer::RenderQueue;
-// use bevy::render::mesh::Indices;
-// use bevy::render::render_resource::PrimitiveTopology;
 use bevy::time::FixedTimestep;
 use bevy_obj::*;
 use hexx::shapes;
@@ -39,6 +34,7 @@ pub fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.1))
+                .with_system(tile_swap_system)
                 .with_system(tile_transform_system)
                 //.with_system(tile_material_system)
                 .with_system(animate_light),
@@ -67,6 +63,19 @@ fn animate_light(
 #[derive(Component)]
 pub struct DynamicLight;
 
+fn tile_swap_system(
+    mut commands: Commands,
+    noise: Res<PerlinNoise>,
+    mut tiles: ResMut<Tiles>,
+) {
+    let prefabs = tiles.prefabs.clone();
+    let layout = tiles.layout.clone();
+    
+    for (hex, tile) in &mut tiles.grid {
+        tile.spawn_tile(&mut commands, &prefabs, &layout);
+    }
+}
+
 fn tile_transform_system(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut tile_queue: Query<(&mut Transform, &Tile)>,
@@ -88,73 +97,51 @@ fn tile_transform_system(
     }
 }
 
-// fn tile_material_system(
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-//     tiles: ResMut<Tiles>,
-// ) {
-//     let perlin = tiles.perlin;
-    
-//     for (hex, tile) in &tiles.grid {
-//         let point = [hex.x() as f64 / 10.0, hex.y() as f64 / 10.0];
-//         let height = perlin.get(point).round() as f32;// * 0.5;
-        
-//         if let Some(m) = materials.get_mut(&tile.material) {
-//             m.base_color = Color::Rgba { red: height, green: height, blue: 0.5, alpha: 1.0 }
-//         }
-//     }
-// }
-
-// fn realtime_tile_spawner(
-//     mut commands: Commands,
-//     tiles: ResMut<Tiles>,
-// ) {
-//     let perlin = tiles.perlin;
-     
-//     //let some_tilepos = tiles.layout.world_pos_to_hex(Vec2::new(0.0, 0.0));
-//     for (hex, entity) in &tiles.grid {
-//         let point = [hex.x() as f64, hex.y() as f64];
-//         let height = perlin.get(point);
-        
-//         if let Some(obj) = commands.get_entity(*entity) {
-//             obj.
-//         }
-//     }
-// }
-
-#[derive(Clone)]
-pub struct TileShape {
-    idx: usize,
-    entity: Entity,
-}
-
-impl TileShape {
-    
-}
-
 #[derive(Component, Clone)]
 pub struct Tile {
     hex: Hex,
     material: Handle<StandardMaterial>,
     shape: TileShape,
+    entity: Option<Entity>,
 }
 
 impl Tile {
+    pub fn new(hex: Hex, material: Handle<StandardMaterial>, prefabs: &TileBrefabs) -> Self {
+        Tile {
+            hex,
+            material,
+            shape: prefabs.floor.clone(),
+            entity: None,
+        }
+    }
+    
     fn set_shape(&mut self, commands: &mut Commands, prefabs: &TileBrefabs) {
-        let bundle = PbrBundle {
-	       mesh: prefabs.floor.clone(),
-	       material: self.material.clone(),
-	       transform: Transform::from_xyz(
-	           self.hex.x as f32, 
-	           0.0, 
-	           self.hex.y as f32
-	           ),
-	       ..default()
-	   };
-	   
-	   let entity = commands
-            .spawn(bundle)
-            .insert(self.clone())
-            .id();
+
+    }
+    
+    fn spawn_tile(&mut self, commands: &mut Commands, prefabs: &TileBrefabs, layout: &HexLayout) {
+        
+        if self.entity.is_none() {
+            let pos = layout.hex_to_world_pos(self.hex);
+            
+            let bundle = PbrBundle {
+                mesh: self.shape.mesh(),
+                material: self.material.clone(),
+                transform: Transform::from_xyz(
+	               pos.x as f32, 
+	               0.0, 
+	               pos.y as f32
+	               ),
+                ..default()
+            };
+            
+            self.entity = Some(
+                commands
+                .spawn(bundle)
+                .insert(self.clone())
+                .id()
+            )
+        }
     }
 }
 
@@ -163,23 +150,44 @@ pub struct PerlinNoise {
     pub perlin: Perlin,
 }
 
-#[derive(Resource)]
+#[derive(Clone, PartialEq)]
+pub enum TileShape {
+    Floor(Handle<Mesh>),
+    Slope1(Handle<Mesh>),
+    Slope2(Handle<Mesh>),
+    Slope3(Handle<Mesh>),
+    Slope4(Handle<Mesh>),
+}
+
+impl TileShape {
+    pub fn mesh(&self) -> Handle<Mesh> {
+        match &self {
+            Self::Floor(m) => m.clone(),
+            Self::Slope1(m) => m.clone(),
+            Self::Slope2(m) => m.clone(),
+            Self::Slope3(m) => m.clone(),
+            Self::Slope4(m) => m.clone(),
+        }
+    }
+}
+
+#[derive(Resource, Clone)]
 pub struct TileBrefabs {
-    floor: Handle<Mesh>,
-    slope1: Handle<Mesh>,
-    slope2: Handle<Mesh>,
-    slope3: Handle<Mesh>,
-    slope4: Handle<Mesh>,
+    floor: TileShape,
+    slope1: TileShape,
+    slope2: TileShape,
+    slope3: TileShape,
+    slope4: TileShape,
 }
 
 impl TileBrefabs {
     fn from_load(asset_server: &Res<AssetServer>) -> Self {
         TileBrefabs {        
-            floor: asset_server.load("models/tiles/full.obj"),
-            slope1: asset_server.load("models/tiles/slope-1.obj"),
-            slope2: asset_server.load("models/tiles/slope-2.obj"),
-            slope3: asset_server.load("models/tiles/slope-3.obj"),
-            slope4: asset_server.load("models/tiles/slope-4.obj"),
+            floor: TileShape::Floor(asset_server.load("models/tiles/full.obj")),
+            slope1: TileShape::Slope1(asset_server.load("models/tiles/slope-1.obj")),
+            slope2: TileShape::Slope2(asset_server.load("models/tiles/slope-2.obj")),
+            slope3: TileShape::Slope3(asset_server.load("models/tiles/slope-3.obj")),
+            slope4: TileShape::Slope4(asset_server.load("models/tiles/slope-4.obj")),
         }
     }
 }
@@ -203,22 +211,11 @@ fn setup_tiles(
     };
     
     let prefabs = TileBrefabs::from_load(&asset_server);
-    let mesh = asset_server.load("models/tiles/full.obj");
 
     let grid = shapes::hexagon(Hex::ZERO, 5)
         .map(|hex| {
-            let pos = layout.hex_to_world_pos(hex);
             let material = materials.add(Color::WHITE.into());
-            
-            
-	       
-	       let tile = Tile { 
-                hex: hex.clone(),
-                material: material.clone(),
-            };
-
-            
-
+            let tile = Tile::new(hex, material, &prefabs);
             (hex, tile)
         })
         .collect();
