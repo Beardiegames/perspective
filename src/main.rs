@@ -65,14 +65,24 @@ pub struct DynamicLight;
 
 fn tile_swap_system(
     mut commands: Commands,
-    noise: Res<PerlinNoise>,
     mut tiles: ResMut<Tiles>,
-) {
+    noise: Res<PerlinNoise>,
+) {    
     let prefabs = tiles.prefabs.clone();
     let layout = tiles.layout.clone();
     
-    for (hex, tile) in &mut tiles.grid {
-        tile.spawn_tile(&mut commands, &prefabs, &layout);
+    for i in 0..tiles.grid.len() {
+        let hex = tiles.grid[i].hex;
+        let my_height = tiles.grid[i].get_height(&noise);
+        
+        let neighbors = hex.all_neighbors().map(|x| match tiles.tile_at_hex(&x) {
+            Some(t) => t.get_height(&noise),
+            None => 0.0,
+        });
+        let tile_shape = TileShape::get_by_neighbors(my_height, neighbors);
+        
+        tiles.grid[i].set_shape(tile_shape, &prefabs);
+        tiles.grid[i].spawn(&mut commands, &layout);
     }
 }
 
@@ -82,8 +92,7 @@ fn tile_transform_system(
     noise: Res<PerlinNoise>,
 ) {    
     for (mut trans, tile) in &mut tile_queue {
-        let point = [tile.hex.x() as f64 / 10.0, tile.hex.y() as f64 / 10.0];
-        let height = noise.perlin.get(point) as f32;
+        let height = tile.get_height(&noise);
         
         trans.translation = Vec3::new(
             trans.translation.x, 
@@ -101,31 +110,48 @@ fn tile_transform_system(
 pub struct Tile {
     hex: Hex,
     material: Handle<StandardMaterial>,
-    shape: TileShape,
+    prefab: TilePrefab,
     entity: Option<Entity>,
 }
 
 impl Tile {
-    pub fn new(hex: Hex, material: Handle<StandardMaterial>, prefabs: &TileBrefabs) -> Self {
+    pub fn new(hex: Hex, start_tile: TilePrefab, material: Handle<StandardMaterial>) -> Self {
         Tile {
             hex,
             material,
-            shape: prefabs.floor.clone(),
+            prefab: start_tile,
             entity: None,
         }
     }
     
-    fn set_shape(&mut self, commands: &mut Commands, prefabs: &TileBrefabs) {
-
+    pub fn get_height(&self, noise: &PerlinNoise) -> f32 {
+        let point = [self.hex.x() as f64 / 10.0, self.hex.y() as f64 / 10.0];
+        noise.perlin.get(point) as f32
     }
     
-    fn spawn_tile(&mut self, commands: &mut Commands, prefabs: &TileBrefabs, layout: &HexLayout) {
+    fn set_shape(&mut self, to: TileShape, prefabs: &TileBrefabs) -> bool {
+        if self.prefab.shape != to {
+            if let Some(p) = prefabs.by_shape(&to) {
+                self.prefab = p.clone();
+                return true;
+            }
+        }
+        false
+    }
+    
+    fn despawn(&mut self, commands: &mut Commands) {
+        if let Some(e) = self.entity {
+            commands.entity(e).despawn();
+        }
+    }
+    
+    fn spawn(&mut self, commands: &mut Commands, layout: &HexLayout) {
         
         if self.entity.is_none() {
             let pos = layout.hex_to_world_pos(self.hex);
             
             let bundle = PbrBundle {
-                mesh: self.shape.mesh(),
+                mesh: self.prefab.mesh.clone(),
                 material: self.material.clone(),
                 transform: Transform::from_xyz(
 	               pos.x as f32, 
@@ -152,43 +178,91 @@ pub struct PerlinNoise {
 
 #[derive(Clone, PartialEq)]
 pub enum TileShape {
-    Floor(Handle<Mesh>),
-    Slope1(Handle<Mesh>),
-    Slope2(Handle<Mesh>),
-    Slope3(Handle<Mesh>),
-    Slope4(Handle<Mesh>),
+    Floor,
+    Slope1,
+    Slope2,
+    Slope3,
+    Slope4,
 }
 
 impl TileShape {
-    pub fn mesh(&self) -> Handle<Mesh> {
-        match &self {
-            Self::Floor(m) => m.clone(),
-            Self::Slope1(m) => m.clone(),
-            Self::Slope2(m) => m.clone(),
-            Self::Slope3(m) => m.clone(),
-            Self::Slope4(m) => m.clone(),
+    fn get_by_neighbors(my_height: f32, n_heights: [f32; 6]) -> Self {
+        let mut sum = 0;
+        let mut down = true;
+        
+        for v in n_heights {
+            if v > my_height {
+                if down {
+                    down = false;
+                    sum = 0;
+                }
+                sum += 1;
+            } else {
+                down = true;
+            }
+        }
+        
+        if n_heights[5] > my_height && n_heights[0] > my_height {
+            sum += 1;
+        }
+        
+        match sum {
+            1 => Self::Slope1,
+            2 => Self::Slope2,
+            3 => Self::Slope3,
+            4 => Self::Slope4, 
+            _ => Self::Floor,
         }
     }
 }
 
-#[derive(Resource, Clone)]
-pub struct TileBrefabs {
-    floor: TileShape,
-    slope1: TileShape,
-    slope2: TileShape,
-    slope3: TileShape,
-    slope4: TileShape,
+#[derive(Clone)]
+pub struct TilePrefab {
+    pub shape: TileShape,
+    pub mesh: Handle<Mesh>,
 }
 
+impl PartialEq for TilePrefab {
+    fn eq(&self, other: &Self) -> bool {
+        self.shape == other.shape
+    }
+}
+
+impl TilePrefab {
+    pub fn new(shape: TileShape, mesh: Handle<Mesh>) -> Self {
+        TilePrefab { shape, mesh }
+    }
+}
+
+#[derive(Resource, Clone)]
+pub struct TileBrefabs (Vec<TilePrefab>);
+pub type TilePrefabBuilder = TileBrefabs;
+
 impl TileBrefabs {
-    fn from_load(asset_server: &Res<AssetServer>) -> Self {
-        TileBrefabs {        
-            floor: TileShape::Floor(asset_server.load("models/tiles/full.obj")),
-            slope1: TileShape::Slope1(asset_server.load("models/tiles/slope-1.obj")),
-            slope2: TileShape::Slope2(asset_server.load("models/tiles/slope-2.obj")),
-            slope3: TileShape::Slope3(asset_server.load("models/tiles/slope-3.obj")),
-            slope4: TileShape::Slope4(asset_server.load("models/tiles/slope-4.obj")),
+    pub fn setup() -> TilePrefabBuilder {
+        TileBrefabs(Vec::new())
+    }
+    
+    pub fn add_prefab(mut self, prefab: TilePrefab) -> TilePrefabBuilder {
+        self.0.push(prefab);
+        self
+    }
+    
+    pub fn build(self) -> TileBrefabs { self }
+    
+    pub fn first(&self) -> Option<&TilePrefab> {
+        match self.0.len() > 0 {
+            true => Some(&self.0[0]),
+            false => None,
         }
+    }
+    
+    pub fn by_shape(&self, shape: &TileShape) -> Option<&TilePrefab> {
+        self.0.iter().find(|x| x.shape == *shape)
+    }
+    
+    pub fn by_mesh(&self, mesh: &Handle<Mesh>) -> Option<&TilePrefab> {
+        self.0.iter().find(|x| x.mesh == *mesh)
     }
 }
 
@@ -196,7 +270,13 @@ impl TileBrefabs {
 pub struct Tiles {
     layout: HexLayout, 
     prefabs: TileBrefabs, 
-    pub grid: HashMap<Hex, Tile>,
+    pub grid: Vec<Tile>,
+}
+
+impl Tiles {
+    pub fn tile_at_hex(&self, hex: &Hex) -> Option<&Tile> {
+        self.grid.iter().find(|x| x.hex == *hex)
+    }
 }
 
 fn setup_tiles(
@@ -210,13 +290,20 @@ fn setup_tiles(
         hex_size: Vec2::splat(1.0),
     };
     
-    let prefabs = TileBrefabs::from_load(&asset_server);
+    let default_prefab = TilePrefab::new(TileShape::Floor, asset_server.load("models/tiles/full.obj"));
+    let prefabs = TileBrefabs::setup()
+        .add_prefab(default_prefab.clone()) 
+        .add_prefab(TilePrefab::new(TileShape::Slope1, asset_server.load("models/tiles/slope-1.obj"))) 
+        .add_prefab(TilePrefab::new(TileShape::Slope2, asset_server.load("models/tiles/slope-2.obj"))) 
+        .add_prefab(TilePrefab::new(TileShape::Slope3, asset_server.load("models/tiles/slope-3.obj"))) 
+        .add_prefab(TilePrefab::new(TileShape::Slope4, asset_server.load("models/tiles/slope-4.obj"))) 
+        .build();
 
     let grid = shapes::hexagon(Hex::ZERO, 5)
         .map(|hex| {
             let material = materials.add(Color::WHITE.into());
-            let tile = Tile::new(hex, material, &prefabs);
-            (hex, tile)
+            let tile = Tile::new(hex, default_prefab.clone(), material);
+            tile
         })
         .collect();
         
