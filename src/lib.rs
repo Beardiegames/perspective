@@ -1,9 +1,23 @@
+mod canvas;
+pub use canvas::*;
+
 mod shaders;
+pub use shaders::*;
+
 mod render_pipeline;
+pub use render_pipeline::*;
+
 mod state;
+pub use state::*;
+
 mod vertices;
-mod textures;
-mod surface;
+pub use vertices::*;
+
+mod texture;
+pub use texture::*;
+
+mod camera;
+pub use camera::*;
 
 use winit::{
     event::*,

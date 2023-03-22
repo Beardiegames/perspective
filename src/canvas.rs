@@ -4,7 +4,7 @@ use winit::{
 };
 
 
-pub struct RenderSurface {
+pub struct Canvas {
     pub surface: wgpu::Surface,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
@@ -14,9 +14,9 @@ pub struct RenderSurface {
     pub window: Window,
 }
 
-impl RenderSurface {
+impl Canvas {
 
-    pub async fn new(window: Window) -> RenderSurface {
+    pub async fn new(window: Window) -> Canvas {
         let size = window.inner_size();
         
         // The instance is a handle to our GPU
@@ -70,7 +70,7 @@ impl RenderSurface {
         };
         surface.configure(&device, &config);
         
-        RenderSurface {
+        Canvas {
             surface,
             device,
             queue,
@@ -78,6 +78,10 @@ impl RenderSurface {
             window,
             size,
         }
+    }
+    
+    pub fn aspect_ratio(&self) -> f32 {
+        self.config.width as f32 / self.config.height as f32
     }
     
     pub fn reconfigure_surface(&self) {
