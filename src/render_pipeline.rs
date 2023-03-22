@@ -1,5 +1,5 @@
 use wgpu::{VertexBufferLayout, BindGroupLayout};
-
+use crate::*;
 
 pub fn create_pipeline_layout(
     device: &wgpu::Device,
@@ -54,7 +54,13 @@ pub fn create_new(
             // Requires Features::CONSERVATIVE_RASTERIZATION
             conservative: false,
         },
-        depth_stencil: None,
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: Texture::DEPTH_FORMAT,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less, // 1.
+            stencil: wgpu::StencilState::default(), // 2.
+            bias: wgpu::DepthBiasState::default(),
+        }),
         multisample: wgpu::MultisampleState {
             count: 1,
             mask: !0,

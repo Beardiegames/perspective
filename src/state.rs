@@ -4,6 +4,9 @@ use winit::{
     dpi::PhysicalSize,
 };
 use crate::*;
+use cgmath::prelude::*;
+
+
 
 
 pub struct State {
@@ -22,6 +25,10 @@ pub struct State {
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
+    
+    instances: Vec<Instance>,
+    instance_buffer: wgpu::Buffer,
+    depth_texture: Texture,
     
     camera_controller: CameraController,
 }
@@ -53,24 +60,33 @@ impl State {
         let camera_buffer = create_camera_buffer(&canvas, camera_uniform);
         let (camera_bind_group_layout, camera_bind_group) = create_camera_bindgroup(&canvas, &camera_buffer);
                   
-        // setup render pipeline
-        let shader = shaders::create_shader(&canvas.device);
-        let render_pipeline = render_pipeline::create_new(
-            &canvas.device,
-            &shader,
-            canvas.config.format,
-            &[vertices::Vertex::buffer_layout(), ],
-            &[
-                &texture_bind_group_layout,
-                &camera_bind_group_layout,
-            ],
-        );
-        
         // setup vertex and indices buffers
         let (vertex_buffer, num_vertices) = vertices::new_vertex_buffer(&canvas.device);
         let (vertex_index_buffer, num_indices) = vertices::new_index_buffer(&canvas.device);
         
+        // insantiating multiple render objects
+        let instances = setup_instance_data();
+        let instance_buffer = create_instance_buffer(&canvas, &instances);
+                  
+        // render depth buffering
+        let depth_texture = texture::Texture::create_depth_texture(&canvas, "depth_texture");
         
+                  
+        // setup render pipeline
+        let shader = shaders::create_shader(&canvas.device);
+        
+        let buffer_layouts = &[Vertex::desc(), InstanceRaw::desc()];
+        let bindgroup_layouts = &[&texture_bind_group_layout, &camera_bind_group_layout];
+        
+        let render_pipeline = render_pipeline::create_new(
+            &canvas.device,
+            &shader,
+            canvas.config.format,
+            buffer_layouts,
+            bindgroup_layouts,
+        );
+
+        // controller for camera movement -> This needs to be refactored into user implementation
         let camera_controller = CameraController::new(0.2);
         
         Self {
@@ -90,6 +106,10 @@ impl State {
             camera_buffer,
             camera_bind_group,
             
+            instances,
+            instance_buffer,
+            depth_texture,
+            
             camera_controller,
         }
     }
@@ -103,7 +123,9 @@ impl State {
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.canvas.resize(new_size);
+        if self.canvas.resize(new_size) {
+            self.depth_texture = Texture::create_depth_texture(&self.canvas, "depth_texture");  
+        }
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
@@ -140,7 +162,14 @@ impl State {
                         store: true,
                     },
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_texture.view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
             });
             
             render_pass.set_pipeline(&self.render_pipeline);
@@ -149,9 +178,10 @@ impl State {
             render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
             
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
             render_pass.set_index_buffer(self.vertex_index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
         }
     
         // submit will accept anything that implements IntoIter

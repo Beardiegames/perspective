@@ -19,12 +19,22 @@ pub use texture::*;
 mod camera;
 pub use camera::*;
 
+mod instances;
+pub use instances::*;
+
+// mod model;
+// pub use model::*;
+
+// mod resources;
+// pub use resources::*;
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
 use state::State;
+
 
 pub async fn run() {
     env_logger::init();

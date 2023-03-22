@@ -35,7 +35,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
         wgpu::VertexBufferLayout {
             array_stride: mem::size_of::<Vertex>() as wgpu::BufferAddress,
