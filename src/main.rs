@@ -1,8 +1,9 @@
-mod wgpu_helper;
-use wgpu_helper::*;
+mod gfx;
 
 fn main() -> anyhow::Result<()> {
-    use pollster::FutureExt;
 
-    (...)
+    let gfx_core = gfx::WgpuCore::new(None)?;
+    println!("{:?}", gfx_core.adapter.get_info());
+
+    Ok(())
 }
