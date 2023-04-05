@@ -32,25 +32,12 @@ pub struct Renderer {
 
 impl Renderer {
     // Creating some of the wgpu types requires async code
-    pub fn new(gfx: &mut Gfx) -> Self {        
-        //let canvas = Canvas::new(window).await;
-            
+    pub fn new(gfx: &mut Gfx) -> Self {                    
         // load texture image
         let diffuse_bytes = include_bytes!("../assets/models/GrassTile.png");
         let diffuse_texture = texture::Texture::from_bytes(&gfx.canvas, diffuse_bytes, "../assets/models/GrassTile.png").unwrap(); // CHANGED!
         let (texture_bind_group_layout, diffuse_bind_group) = texture::create_diffuse_bindgroup(&gfx.canvas, &diffuse_texture);
                   
-        // setup render camera
-        // let camera = Camera {
-        //     eye: (0.0, 1.0, 2.0).into(), // position the camera one unit up and 2 units back, +z is out of the screen
-        //     target: (0.0, 0.0, 0.0).into(), // have it look at the origin
-        //     up: cgmath::Vector3::unit_y(), // which way is "up"
-        //     aspect: canvas.aspect_ratio(),
-        //     fovy: 45.0,
-        //     znear: 0.1,
-        //     zfar: 100.0,
-        // };
-        
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&gfx.camera);
         

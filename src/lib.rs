@@ -38,6 +38,8 @@ pub use state::Renderer;
 
 
 pub trait GfxHandler {
+    fn on_startup(&mut self, gfx: &mut Gfx);
+    
     fn on_input(&mut self, event: &WindowEvent) -> bool;
     
     fn on_update(&mut self, gfx: &mut Gfx);
@@ -67,13 +69,13 @@ impl Gfx {
         let canvas = Canvas::new(window).await;
         
         let camera = Camera {
-            eye: (0.0, 1.0, 2.0).into(), // position the camera one unit up and 2 units back, +z is out of the screen
+            eye: (0.0, 5.0, 5.0).into(), // position the camera one unit up and 2 units back, +z is out of the screen
             target: (0.0, 0.0, 0.0).into(), // have it look at the origin
             up: cgmath::Vector3::unit_y(), // which way is "up"
             aspect: canvas.aspect_ratio(),
-            fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+            projection: Projection::Perspective { fov: 45.0 },
         };
         
         Gfx { canvas, camera }
@@ -87,6 +89,8 @@ where T: GfxHandler + 'static
     let event_loop = EventLoop::new();
     let mut gfx = block_on(Gfx::new(&event_loop));
     let mut renderer = Renderer::new(&mut gfx);
+    
+    handler.on_startup(&mut gfx);
     
     let mut ctx = GfxContext { handler, gfx, renderer };
     
@@ -109,8 +113,7 @@ where T: GfxHandler + 'static
                 }
             },
             Event::MainEventsCleared => {
-                // RedrawRequested will only trigger once, unless we manually
-                // request it.
+                // RedrawRequested will only trigger once, unless we manually request it.
                 ctx.gfx.canvas.window.request_redraw();
             },
             _ => {}
