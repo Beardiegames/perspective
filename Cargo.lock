@@ -1149,6 +1149,7 @@ dependencies = [
  "image",
  "log",
  "pollster",
+ "raw-window-handle 0.5.1",
  "wgpu",
  "winit",
 ]
