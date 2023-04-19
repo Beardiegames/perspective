@@ -5,7 +5,7 @@ use raw_window_handle::*;
 
 impl WgpuCore {
 
-    pub fn new<W>(settings: Option<WindowSettings<W>>) -> anyhow::Result<Self>
+    pub fn new<W>(settings: Option<&WindowSettings<W>>) -> anyhow::Result<Self>
         where W: HasRawWindowHandle + HasRawDisplayHandle,
     {
 
@@ -18,7 +18,7 @@ impl WgpuCore {
         
         let (mut surface, size) = match settings {
                 Some(s) => (
-                    unsafe { instance.create_surface(s.window) }.ok(),
+                    unsafe { instance.create_surface(&s.window) }.ok(),
                     (
                         if s.width > 50 { s.width } else { 50 }, 
                         if s.height > 50 { s.height } else { 50 }
@@ -47,7 +47,7 @@ impl WgpuCore {
             )
             .block_on()?;
         
-        if let Some(srf) = &mut surface {
+        let canvas = surface.map(|srf| {
             let surface_caps = srf.get_capabilities(&adapter);
 
             let surface_format = surface_caps.formats.iter()
@@ -66,14 +66,19 @@ impl WgpuCore {
                 view_formats: vec![],
             };
             srf.configure(&device, &config);
-        }
+
+            Canvas {  
+                surface: srf,
+                config
+            }
+        });
         
         Ok( WgpuCore {
             instance,
             adapter,
             device,
             queue,
-            surface,
+            canvas,
 
             bindgroup_count: 0,
         })

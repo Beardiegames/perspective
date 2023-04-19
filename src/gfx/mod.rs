@@ -20,7 +20,12 @@ pub struct WindowSettings<'a, W>
 {
     pub window: &'a W,
     pub width: u32,
-    pub height: u32
+    pub height: u32,
+}
+
+pub struct Canvas {
+    pub surface: wgpu::Surface,
+    pub config: wgpu::SurfaceConfiguration,
 }
 
 pub struct WgpuCore {
@@ -28,11 +33,19 @@ pub struct WgpuCore {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
-    pub surface: Option<wgpu::Surface>,
+    pub canvas: Option<Canvas>,
 
     bindgroup_count: u32,
 }
 
-pub trait FromBytes {
-	fn from_bytes(b: &[u8]) -> Self;
+impl WgpuCore {
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width == 0 || height == 0 { return; } 
+        
+        if let Some(c) = &mut self.canvas {
+            c.config.width = width;
+            c.config.height = height;
+            c.surface.configure(&self.device, &c.config);
+        }
+    }
 }
