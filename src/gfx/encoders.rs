@@ -108,7 +108,7 @@ impl WgpuCore {
         {
             let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&compute_pipe.pipeline);
-            cpass.set_bind_group(*bind_group.index(), &bind_group.bind_group, &[]);
+            cpass.set_bind_group(*bind_group.set_idx(), &bind_group.bind_group, &[]);
             cpass.insert_debug_marker("compute collatz iterations");
             cpass.dispatch_workgroups(buffers.data.len() as u32, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
         }

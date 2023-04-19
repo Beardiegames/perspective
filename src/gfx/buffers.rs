@@ -2,13 +2,20 @@ use super::*;
 use wgpu::{util::DeviceExt, Surface};
 
 
-impl WgpuCore {
+pub struct BufferHandle<T> {
+    pub data: Vec<T>,
+    pub size: u64,
+    pub staging: wgpu::Buffer,
+    pub storage: wgpu::Buffer,
+}
+
+impl<T> BufferHandle<T> {
 
     #[allow(dead_code)]
     /// @label: tag name for our buffer descriptor 
     /// @data: buffer data we want to share with our shader
     /// 
-    pub fn create_buffer_handles<'a, T>(&self, label: &str, data: &'a [T]) -> BufferHandle<'a, T>
+    pub fn new(core: &WgpuCore, label: &str, data: Vec<T>) -> Self
         where T: Sized + bytemuck::Pod
     {
 
@@ -20,7 +27,7 @@ impl WgpuCore {
         // `usage` of buffer specifies how it can be used:
         //   `BufferUsages::MAP_READ` allows it to be read (outside the shader).
         //   `BufferUsages::COPY_DST` allows it to be the destination of the copy.
-        let staging_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+        let staging_buffer = core.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some(&format!("{}_staging", label)),
             size,
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
@@ -32,9 +39,9 @@ impl WgpuCore {
         //   A storage buffer (can be bound within a bind group and thus available to a shader).
         //   The destination of a copy.
         //   The source of a copy.
-        let storage_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let storage_buffer = core.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some(&format!("{}_storage", label)),
-            contents: bytemuck::cast_slice(data),
+            contents: bytemuck::cast_slice(data.as_slice()),
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::COPY_SRC,
@@ -47,5 +54,4 @@ impl WgpuCore {
             storage: storage_buffer,
         }
     }
-
 }

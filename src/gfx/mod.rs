@@ -1,47 +1,19 @@
-mod build_core;
-pub mod encoders;
+pub mod corebuilder;
+//pub mod encoders;
 mod pipeline;
 mod bindgroups;
 mod buffers;
+mod compute;
 
 use pollster::FutureExt;
 use wgpu::{InstanceDescriptor, BindGroupLayout};
 use raw_window_handle::*;
+use pipeline::*;
+use bindgroups::*;
+use buffers::*;
 
-pub struct BufferHandle<'a, T> {
-    data: &'a [T],
-    size: u64,
-    staging: wgpu::Buffer,
-    storage: wgpu::Buffer,
-}
+pub use compute::*;
 
-pub struct BindgroupHandle {
-    bind_group: wgpu::BindGroup,
-    layout: wgpu::BindGroupLayout,
-    set_idx: u32,
-    bond_idx: u32,
-}
-
-impl BindgroupHandle {
-    pub fn index(&self) -> &u32 { &self.set_idx }
-    // pub fn set_idx(&self) -> &u32 { &self.set_idx }
-    // pub fn bond_idx(&self) -> &u32 { &self.bond_idx }
-}
-
-pub trait PipelineHandle {
-    fn get_bind_group_layout(&self, set_idx: u32) -> BindGroupLayout;
-}
-
-pub struct ComputePipeHandle {
-    shader: wgpu::ShaderModule,
-    pipeline: wgpu::ComputePipeline,
-}
-
-impl PipelineHandle for ComputePipeHandle {
-    fn get_bind_group_layout(&self, idx: u32) -> BindGroupLayout {
-        self.pipeline.get_bind_group_layout(idx) 
-    }
-}
 
 pub struct WindowSettings<'a, W>
     where W: HasRawWindowHandle + HasRawDisplayHandle,
@@ -59,4 +31,8 @@ pub struct WgpuCore {
     pub surface: Option<wgpu::Surface>,
 
     bindgroup_count: u32,
+}
+
+pub trait FromBytes {
+	fn from_bytes(b: &[u8]) -> Self;
 }
