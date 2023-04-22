@@ -19,7 +19,7 @@ impl BindgroupHandle {
     /// A bind group defines how buffers are accessed by shaders.
     /// binding` here refers to the `binding` of a buffer in the shader (`layout(set = 0, binding = 0) buffer`).
     /// 
-    pub fn new<P, T>(core: &mut WgpuCore, label: &str, pipe: &P, buffer: &BufferHandle<T>) -> BindgroupHandle 
+    pub fn new<P>(core: &mut WgpuCore, label: &str, pipe: &P, buffer: &BufferHandle) -> BindgroupHandle //<T>) -> BindgroupHandle 
         where P: PipelineHandle,
     {
 

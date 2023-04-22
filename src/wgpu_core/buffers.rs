@@ -2,26 +2,32 @@ use super::*;
 use wgpu::{util::DeviceExt, Surface};
 
 
-pub struct BufferHandle<T> {
-    pub data: Vec<T>,
-    pub size: u64,
+pub struct BufferHandle { //<T> {
+    //pub data: Vec<T>,
+    pub cell_count: u32,
+    pub buffer_size: u64,
+    pub chunk_size: usize,
+
     pub staging: wgpu::Buffer,
     pub storage: wgpu::Buffer,
 }
 
-impl<T> BufferHandle<T> {
+//impl<T> BufferHandle<T> {
+impl BufferHandle {
 
     #[allow(dead_code)]
     /// @label: tag name for our buffer descriptor 
     /// @data: buffer data we want to share with our shader
     /// 
-    pub fn new(core: &WgpuCore, label: &str, data: Vec<T>) -> Self
+    pub fn new<T>(core: &WgpuCore, label: &str, data: Vec<T>) -> Self
         where T: Sized + bytemuck::Pod
     {
 
         // determine memory size for our data
-        let slice_size = data.len() * std::mem::size_of::<T>();
-        let size = slice_size as wgpu::BufferAddress;
+        let cell_count = data.len();
+        let chunk_size = std::mem::size_of::<T>();
+        let slice_size = cell_count * chunk_size;
+        let buffer_size = slice_size as wgpu::BufferAddress;
         
         // Instantiates buffer without data.
         // `usage` of buffer specifies how it can be used:
@@ -29,7 +35,7 @@ impl<T> BufferHandle<T> {
         //   `BufferUsages::COPY_DST` allows it to be the destination of the copy.
         let staging_buffer = core.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some(&format!("{}_staging", label)),
-            size,
+            size: buffer_size,
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -48,8 +54,10 @@ impl<T> BufferHandle<T> {
         });
 
         BufferHandle{
-            data,
-            size,
+            //data,
+            cell_count: cell_count  as u32,
+            buffer_size,
+            chunk_size,
             staging: staging_buffer,
             storage: storage_buffer,
         }

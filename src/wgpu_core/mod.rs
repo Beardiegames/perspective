@@ -1,9 +1,9 @@
 pub mod corebuilder;
-//pub mod encoders;
 mod pipeline;
 mod bindgroups;
 mod buffers;
 mod compute;
+mod computedata;
 
 use pollster::FutureExt;
 use wgpu::{InstanceDescriptor, BindGroupLayout};
@@ -13,6 +13,7 @@ use bindgroups::*;
 use buffers::*;
 
 pub use compute::*;
+pub use computedata::*;
 
 
 pub struct WindowSettings<'a, W>
@@ -47,5 +48,25 @@ impl WgpuCore {
             c.config.height = height;
             c.surface.configure(&self.device, &c.config);
         }
+    }
+
+    pub fn inject_basic_render_passes(&self, view: & wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
+        let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
     }
 }
