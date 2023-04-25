@@ -1,5 +1,4 @@
 use super::*;
-use wgpu::{SubmissionIndex, util::DeviceExt, Surface};
 use raw_window_handle::*;
 
 
@@ -16,7 +15,7 @@ impl WgpuCore {
                 }
             );
         
-        let (mut surface, size) = match settings {
+        let (surface, size) = match settings {
                 Some(s) => (
                     unsafe { instance.create_surface(&s.window) }.ok(),
                     (
@@ -79,8 +78,6 @@ impl WgpuCore {
             device,
             queue,
             canvas,
-
-            bindgroup_count: 0,
         })
     }
 }

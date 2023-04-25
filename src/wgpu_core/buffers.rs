@@ -1,9 +1,8 @@
 use super::*;
-use wgpu::{util::DeviceExt, Surface};
+use wgpu::{util::DeviceExt};
 
 
-pub struct BufferHandle { //<T> {
-    //pub data: Vec<T>,
+pub struct BufferHandle {
     pub cell_count: u32,
     pub buffer_size: u64,
     pub chunk_size: usize,
@@ -12,7 +11,6 @@ pub struct BufferHandle { //<T> {
     pub storage: wgpu::Buffer,
 }
 
-//impl<T> BufferHandle<T> {
 impl BufferHandle {
 
     #[allow(dead_code)]
@@ -34,7 +32,7 @@ impl BufferHandle {
         //   `BufferUsages::MAP_READ` allows it to be read (outside the shader).
         //   `BufferUsages::COPY_DST` allows it to be the destination of the copy.
         let staging_buffer = core.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some(&format!("{}_staging", label)),
+            label: Some(&format!("{}_stagingbuffer", label)),
             size: buffer_size,
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -46,7 +44,7 @@ impl BufferHandle {
         //   The destination of a copy.
         //   The source of a copy.
         let storage_buffer = core.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("{}_storage", label)),
+            label: Some(&format!("{}_storagebuffer", label)),
             contents: bytemuck::cast_slice(data.as_slice()),
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_DST
@@ -54,7 +52,6 @@ impl BufferHandle {
         });
 
         BufferHandle{
-            //data,
             cell_count: cell_count  as u32,
             buffer_size,
             chunk_size,

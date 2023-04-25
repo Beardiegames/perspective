@@ -3,17 +3,15 @@ mod pipeline;
 mod bindgroups;
 mod buffers;
 mod compute;
-mod computedata;
 
 use pollster::FutureExt;
 use wgpu::{InstanceDescriptor, BindGroupLayout};
 use raw_window_handle::*;
-use pipeline::*;
-use bindgroups::*;
-use buffers::*;
 
+pub use pipeline::*;
+pub use bindgroups::*;
+pub use buffers::*;
 pub use compute::*;
-pub use computedata::*;
 
 
 pub struct WindowSettings<'a, W>
@@ -35,8 +33,6 @@ pub struct WgpuCore {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub canvas: Option<Canvas>,
-
-    bindgroup_count: u32,
 }
 
 impl WgpuCore {

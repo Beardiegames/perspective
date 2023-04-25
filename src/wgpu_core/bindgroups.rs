@@ -1,6 +1,15 @@
 use super::{*, buffers::BufferHandle};
-use wgpu::{util::DeviceExt, Surface};
 
+
+pub struct BindGroupSettings<'a, P> 
+where P: PipelineHandle 
+{
+    pub label: &'a str, 
+    pub group_index: u32,// represented within shader as @binding
+    pub binding_index: u32,// represented within shader as @binding
+    pub resource_buffer: &'a BufferHandle, // Buffer to hand the shader data to work with
+    pub pipeline: &'a P,
+}
 
 pub struct BindgroupHandle {
     pub bind_group: wgpu::BindGroup,
@@ -16,27 +25,22 @@ impl BindgroupHandle {
 
 impl BindgroupHandle {
 
-    /// A bind group defines how buffers are accessed by shaders.
-    /// binding` here refers to the `binding` of a buffer in the shader (`layout(set = 0, binding = 0) buffer`).
-    /// 
-    pub fn new<P>(core: &mut WgpuCore, label: &str, pipe: &P, buffer: &BufferHandle) -> BindgroupHandle //<T>) -> BindgroupHandle 
+    pub fn new<P>(core: &mut WgpuCore, settings: &BindGroupSettings<P>) -> BindgroupHandle
         where P: PipelineHandle,
     {
 
-        let set_idx = core.bindgroup_count;
-        let bond_idx = 0;
+        let set_idx = settings.group_index;
+        let bond_idx = settings.binding_index;
 
-        let layout = pipe.get_bind_group_layout(set_idx);
+        let layout = settings.pipeline.get_bind_group_layout(set_idx);
         let bind_group = core.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(label),
+            label: Some(settings.label),
             layout: &layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: bond_idx,
-                resource: buffer.storage.as_entire_binding(),
+                resource: settings.resource_buffer.storage.as_entire_binding(),
             }],
         });
-
-        core.bindgroup_count += 1;
 
         BindgroupHandle {
             bind_group,
