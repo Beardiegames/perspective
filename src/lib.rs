@@ -29,7 +29,7 @@ pub trait PerspectiveHandler {
 
             let output = c.surface.get_current_texture()?;
             let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-            gx.inject_basic_render_passes(&view, &mut encoder); 
+            gx.quick_inject_render_passes(&view, &mut encoder); 
             gx.queue.submit(std::iter::once(encoder.finish()));
             output.present();
         }

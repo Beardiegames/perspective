@@ -3,6 +3,7 @@ mod pipeline;
 mod bindgroups;
 mod buffers;
 mod compute;
+mod render;
 
 use pollster::FutureExt;
 use wgpu::{InstanceDescriptor, BindGroupLayout};
@@ -12,6 +13,7 @@ pub use pipeline::*;
 pub use bindgroups::*;
 pub use buffers::*;
 pub use compute::*;
+pub use render::*;
 
 
 pub struct WindowSettings<'a, W>
@@ -46,7 +48,7 @@ impl WgpuCore {
         }
     }
 
-    pub fn inject_basic_render_passes(&self, view: & wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
+    pub fn quick_inject_render_passes(&self, view: & wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
         let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {

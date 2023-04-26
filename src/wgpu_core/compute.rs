@@ -52,12 +52,12 @@ impl ComputeProcessor //where T: ComputeData
         ComputeProcessor { compute_pipe, bind_group, buffers }
     }
 
-    pub fn inject_passes(&self, encoder: &mut wgpu::CommandEncoder) {
+    pub fn quick_inject_passes(&self, encoder: &mut wgpu::CommandEncoder) {
         {
             let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipe.pipeline);
             cpass.set_bind_group(*self.bind_group.set_idx(), &self.bind_group.bind_group, &[]);
-            cpass.insert_debug_marker("compute collatz iterations");
+            //cpass.insert_debug_marker("compute collatz iterations");
             cpass.dispatch_workgroups(self.buffers.cell_count, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
         }
         encoder.copy_buffer_to_buffer(&self.buffers.storage, 0, &self.buffers.staging, 0, self.buffers.buffer_size);

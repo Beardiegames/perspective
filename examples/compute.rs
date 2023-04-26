@@ -13,7 +13,7 @@ impl PerspectiveHandler for ComputeExample {
         let compute_processor = ComputeProcessor::new(
             gfx, 
             &ComputeSettings {
-                label: "Example", 
+                label: "ComputeExample", 
                 group_index: 0,// represented within shader as @binding
                 binding_index: 0,// represented within shader as @binding
     
@@ -27,7 +27,7 @@ impl PerspectiveHandler for ComputeExample {
     }
 
     fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: wgpu::CommandEncoder) -> Result<(), wgpu::SurfaceError> {
-        self.compute_processor.inject_passes(&mut encoder);
+        self.compute_processor.quick_inject_passes(&mut encoder);
 
         gx.queue.submit(std::iter::once(encoder.finish()));
         
