@@ -1,4 +1,5 @@
 mod wgpu_core;
+pub mod shapes;
 
 pub use wgpu_core::*;
 pub use wgpu;

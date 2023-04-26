@@ -10,8 +10,7 @@ impl PerspectiveHandler for RenderExample {
 
     fn startup(gfx: &mut WgpuCore) -> Self {
 
-        let render_processor = RenderProcessor::new(
-            gfx, 
+        let render_processor = gfx.setup_render_processor(
             &RenderSettings {
                 label: "RenderExample", 
                 group_index: 0,// represented within shader as @binding
@@ -50,8 +49,10 @@ impl PerspectiveHandler for RenderExample {
                     depth_stencil_attachment: None,
                 });
 
-                render_pass.set_pipeline(&self.render_processor.render_pipe.pipeline);
-                render_pass.draw(0..3, 0..1);
+                render_pass.set_pipeline(&self.render_processor.pipeline);
+                render_pass.set_vertex_buffer(0, self.render_processor.vertex_buffer.slice(..));
+                render_pass.set_index_buffer(self.render_processor.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
+                render_pass.draw_indexed(0..self.render_processor.num_indices, 0, 0..1); // 2.
             }
 
             gx.queue.submit(std::iter::once(encoder.finish()));

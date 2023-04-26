@@ -1,17 +1,17 @@
 pub mod corebuilder;
-mod pipeline;
-mod bindgroups;
-mod buffers;
+//mod pipeline;
+//mod bindgroups;
+//mod compute_buffer;
 mod compute;
 mod render;
 
 use pollster::FutureExt;
-use wgpu::{InstanceDescriptor, BindGroupLayout};
+use wgpu::{InstanceDescriptor};
 use raw_window_handle::*;
 
-pub use pipeline::*;
-pub use bindgroups::*;
-pub use buffers::*;
+//pub use pipeline::*;
+//pub use bindgroups::*;
+//pub use compute_buffer::*;
 pub use compute::*;
 pub use render::*;
 
@@ -46,6 +46,16 @@ impl WgpuCore {
             c.config.height = height;
             c.surface.configure(&self.device, &c.config);
         }
+    }
+
+    pub fn setup_compute_processor<T>(&mut self, settings: &ComputeSettings<T>) -> ComputeProcessor
+        where T: bytemuck::Pod + Clone
+    {
+        ComputeProcessor::new(self, settings)
+    }
+
+    pub fn setup_render_processor(&mut self, settings: &RenderSettings) -> RenderProcessor {
+        RenderProcessor::new(self, settings)
     }
 
     pub fn quick_inject_render_passes(&self, view: & wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {

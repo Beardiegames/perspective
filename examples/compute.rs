@@ -10,14 +10,13 @@ impl PerspectiveHandler for ComputeExample {
 
     fn startup(gfx: &mut WgpuCore) -> Self {
 
-        let compute_processor = ComputeProcessor::new(
-            gfx, 
+        let compute_processor = gfx.setup_compute_processor(
             &ComputeSettings {
                 label: "ComputeExample", 
                 group_index: 0,// represented within shader as @binding
                 binding_index: 0,// represented within shader as @binding
     
-                start_data: vec![1; 10000],
+                data_set: vec![1; 10000],
                 shader_src: include_str!("shaders/compute_shader.wgsl"),
                 entry_point: "main",
             }
