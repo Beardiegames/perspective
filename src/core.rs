@@ -1,19 +1,8 @@
-pub mod corebuilder;
-//mod pipeline;
-//mod bindgroups;
-//mod compute_buffer;
-mod compute;
-mod render;
-
-use pollster::FutureExt;
-use wgpu::{InstanceDescriptor};
+// use pollster::FutureExt;
+// use wgpu::{InstanceDescriptor};
 use raw_window_handle::*;
 
-//pub use pipeline::*;
-//pub use bindgroups::*;
-//pub use compute_buffer::*;
-pub use compute::*;
-pub use render::*;
+pub use crate::processors::*;
 
 
 pub struct WindowSettings<'a, W>

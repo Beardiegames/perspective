@@ -2,7 +2,7 @@ use perspective::*;
 
 
 pub struct ComputeExample {
-    compute_processor: ComputeProcessor,
+    compute: ComputeProcessor,
 }
 
 
@@ -10,7 +10,7 @@ impl PerspectiveHandler for ComputeExample {
 
     fn startup(gfx: &mut WgpuCore) -> Self {
 
-        let compute_processor = gfx.setup_compute_processor(
+        let compute = gfx.setup_compute_processor(
             &ComputeSettings {
                 label: "ComputeExample", 
                 group_index: 0,// represented within shader as @binding
@@ -22,26 +22,29 @@ impl PerspectiveHandler for ComputeExample {
             }
         );
 
-        ComputeExample { compute_processor }
+        ComputeExample { compute }
     }
 
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: wgpu::CommandEncoder) -> Result<(), wgpu::SurfaceError> {
-        self.compute_processor.quick_inject_passes(&mut encoder);
+    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: CommandEncoder, _view: TextureView, _output: SurfaceTexture) {
+        self.compute.quick_inject_passes(&mut encoder);
 
         gx.queue.submit(std::iter::once(encoder.finish()));
         
-        let buffer = self.compute_processor.slice_staging_buffer();
+        let buffer = self.compute.slice_staging_buffer();
 
         gx.device.poll(wgpu::Maintain::Wait); 
         
-        let result_data = self.compute_processor.read_results_and_drop(
-            buffer,
-            |b| u32::from_ne_bytes(b.try_into().unwrap()),
-        );
+        let data = buffer.get_mapped_range();
 
-        println!("result_data: {}, {}, {}, {}", result_data[0], result_data[1], result_data[2], result_data[3]);
+        let result: Vec<u32> = data
+            .chunks_exact(self.compute.buffer_chunksize)
+            .map(|chunk| u32::from_ne_bytes(chunk.try_into().unwrap()))
+            .collect();
 
-        Ok(())
+        drop(data);
+        self.compute.staging_buffer.unmap();
+
+        println!("result_data: {}, {}, {}, {}", result[0], result[1], result[2], result[3]);
     }
 }
 

@@ -8,9 +8,9 @@ pub struct RenderExample {
 
 impl PerspectiveHandler for RenderExample {
 
-    fn startup(gfx: &mut WgpuCore) -> Self {
+    fn startup(gx: &mut WgpuCore) -> Self {
 
-        let render_processor = gfx.setup_render_processor(
+        let render_processor = gx.setup_render_processor(
             &RenderSettings {
                 label: "RenderExample", 
                 group_index: 0,// represented within shader as @binding
@@ -25,41 +25,35 @@ impl PerspectiveHandler for RenderExample {
         RenderExample { render_processor }
     }
 
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: wgpu::CommandEncoder) -> Result<(), wgpu::SurfaceError> {
+    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: CommandEncoder, view: TextureView, output: SurfaceTexture) {
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: None,
+            });
 
-        if let Some(c) = &gx.canvas {
-            let output = c.surface.get_current_texture()?;
-            let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-            {
-                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Render Pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.1,
-                                g: 0.2,
-                                b: 0.3,
-                                a: 1.0,
-                            }),
-                            store: true,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                });
-
-                render_pass.set_pipeline(&self.render_processor.pipeline);
-                render_pass.set_vertex_buffer(0, self.render_processor.vertex_buffer.slice(..));
-                render_pass.set_index_buffer(self.render_processor.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
-                render_pass.draw_indexed(0..self.render_processor.num_indices, 0, 0..1); // 2.
-            }
-
-            gx.queue.submit(std::iter::once(encoder.finish()));
-
-            output.present();
+            render_pass.set_pipeline(&self.render_processor.pipeline);
+            render_pass.set_vertex_buffer(0, self.render_processor.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.render_processor.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
+            render_pass.draw_indexed(0..self.render_processor.num_indices, 0, 0..1); // 2.
         }
-        Ok(())
+
+    gx.queue.submit(std::iter::once(encoder.finish()));
+    output.present();
+
     }
 }
 
