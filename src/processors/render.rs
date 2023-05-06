@@ -19,6 +19,7 @@ pub struct RenderSettings<'a> {
 pub struct RenderProcessor {
     pub shader: wgpu::ShaderModule,
     pub pipeline: wgpu::RenderPipeline,
+    pub layout: wgpu::PipelineLayout,
 
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
@@ -69,6 +70,7 @@ impl RenderProcessor {
         RenderProcessor { 
             shader, 
             pipeline, 
+            layout,
             vertex_buffer, 
             index_buffer, 
             num_vertices, 

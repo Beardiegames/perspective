@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use super::*;
 use image::{ImageBuffer, Rgba};
 use wgpu::*;
@@ -22,9 +24,9 @@ impl TexturePack {
         let dimensions = image.dimensions();
 
         let size = wgpu::Extent3d {
-            width: dimensions.0,
+            width: dimensions.0 / 2,
             height: dimensions.1,
-            depth_or_array_layers: 1,
+            depth_or_array_layers: 2,
         };
 
         let texture = gx.device.create_texture(
@@ -50,13 +52,22 @@ impl TexturePack {
             &image_buffer,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0),
+                bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0 / size.depth_or_array_layers),
                 rows_per_image: std::num::NonZeroU32::new(dimensions.1),
             },
             size,
         );
 
-        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("texture_view"),
+            format: Some(TextureFormat::Rgba8UnormSrgb),
+            dimension: Some(TextureViewDimension::D2Array),
+            aspect: TextureAspect::All,
+            base_mip_level: 0,
+            mip_level_count: None,
+            base_array_layer: 0,
+            array_layer_count: NonZeroU32::new(size.depth_or_array_layers),
+        });
 
         let sampler = gx.device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -76,7 +87,7 @@ impl TexturePack {
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
+                            view_dimension: wgpu::TextureViewDimension::D2Array,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
                         count: None,
