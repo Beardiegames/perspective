@@ -3,6 +3,7 @@
 use raw_window_handle::*;
 
 pub use crate::processors::*;
+pub use crate::resources::*;
 
 
 pub struct WindowSettings<'a, W>
@@ -45,25 +46,5 @@ impl WgpuCore {
 
     pub fn setup_render_processor(&mut self, settings: &RenderSettings) -> RenderProcessor {
         RenderProcessor::new(self, settings)
-    }
-
-    pub fn quick_inject_render_passes(&self, view: & wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
-        let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: None,
-        });
     }
 }

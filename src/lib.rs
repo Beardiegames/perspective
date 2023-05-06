@@ -1,11 +1,13 @@
 mod core;
 mod builder;
 mod processors;
+mod resources;
 pub mod shapes;
 
 pub use builder::*;
 pub use crate::core::*;
 pub use processors::*;
+pub use resources::*;
 pub use wgpu::*;
 
 use winit::{
@@ -14,6 +16,34 @@ use winit::{
 	window::{WindowBuilder},
     dpi::PhysicalSize,
 };
+
+pub struct RenderContext {
+    pub encoder: CommandEncoder, 
+    pub view: TextureView, 
+    pub output: SurfaceTexture,
+}
+
+impl RenderContext {
+    pub fn begin_render_pass(&mut self) -> RenderPass {
+        self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &self.view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        })
+    }
+}
 
 pub enum PerspectiveError {
     SurfaceError(wgpu::SurfaceError),
@@ -34,11 +64,12 @@ pub trait PerspectiveHandler {
     fn resize(&mut self, width: u32, height: u32) {}
 
     #[allow(unused)]
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: CommandEncoder, view: TextureView, output: SurfaceTexture) {
-        gx.quick_inject_render_passes(&view, &mut encoder); 
+    fn render_pipeline(&mut self, gx: &WgpuCore, mut render: RenderContext) {
+        
+        render.begin_render_pass();
 
-        gx.queue.submit(Some(encoder.finish()));
-        output.present();
+        gx.queue.submit(Some(render.encoder.finish()));
+        render.output.present();
     }
 }
 
@@ -49,8 +80,7 @@ pub struct Perspective {
 impl Perspective {
 
     pub fn new(width: u32, height: u32) -> Self {
-
-        Perspective {
+        Self {
             window_size: PhysicalSize::new(width, height),
         }
     }
@@ -153,8 +183,8 @@ impl Perspective {
                 .map_err(|e| PerspectiveError::SurfaceError(e))?;
 
             let view = output.texture.create_view(&TextureViewDescriptor::default());
-
-            return Ok(app.render_pipeline(gx, encoder, view, output)); 
+            
+            return Ok(app.render_pipeline(gx, RenderContext{ encoder, view, output })); 
         }
         Err(PerspectiveError::NoCanvas)
     }

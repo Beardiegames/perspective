@@ -25,10 +25,10 @@ impl PerspectiveHandler for ComputeExample {
         ComputeExample { compute }
     }
 
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut encoder: CommandEncoder, _view: TextureView, _output: SurfaceTexture) {
-        self.compute.quick_inject_passes(&mut encoder);
+    fn render_pipeline(&mut self, gx: &WgpuCore, mut render: RenderContext) {
+        self.compute.quick_inject_passes(&mut render.encoder);
 
-        gx.queue.submit(std::iter::once(encoder.finish()));
+        gx.queue.submit(Some(render.encoder.finish()));
         
         let buffer = self.compute.slice_staging_buffer();
 
