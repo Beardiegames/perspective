@@ -20,11 +20,15 @@ impl PerspectiveHandler for RenderExample {
                 vertex_entry_point: "vertex_main",
                 fragment_entry_point: "fragment_main",
 
-                image_data: include_bytes!("textures/cat.jpg"),
+                image_data: include_bytes!("textures/cat-sprite.png"),
             }
         );
 
         RenderExample { render }
+    }
+
+    fn update(&mut self, gx: &mut WgpuCore) {
+        self.render.vertex_buffer.slice(..);
     }
 
     #[allow(unused)]
@@ -46,6 +50,6 @@ impl PerspectiveHandler for RenderExample {
 }
 
 fn main() -> anyhow::Result<()> {
-    Perspective::new(800, 600)
+    Perspective::new(1600, 1200)
         .run::<RenderExample>()
 }

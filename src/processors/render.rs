@@ -31,12 +31,12 @@ pub struct RenderProcessor {
 
 impl RenderProcessor {
 
-    pub fn new(core: &mut WgpuCore, settings: &RenderSettings) -> RenderProcessor {
+    pub fn new(gx: &mut WgpuCore, settings: &RenderSettings) -> RenderProcessor {
 
-        let texture_pack = TexturePack::new(core, settings.image_data);
+        let texture_pack = TexturePack::new(gx, settings.image_data);
 
         let (shader, layout, pipeline) = build_render_pipe(
-            core, 
+            gx, 
             &format!("{}_render-pipeline", settings.label),
             settings.shader_src, 
             settings.vertex_entry_point,
@@ -44,28 +44,13 @@ impl RenderProcessor {
             &texture_pack
         );
 
-        let shape = crate::shapes::HEXAGON;
+        let uv_scale = [0.5, 0.5];
+        let shape = crate::shapes::create_square(uv_scale);
 
-        let vertex_buffer = core.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(shape.vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
+        let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(gx);
 
         let num_vertices = shape.vertices.len() as u32;
-
-        let index_buffer = core.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(shape.indices),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
-
         let num_indices = shape.indices.len() as u32;
-
         
         RenderProcessor { 
             shader, 
