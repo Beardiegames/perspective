@@ -26,106 +26,102 @@ pub struct RenderProcessor {
     pub num_vertices: u32,
     pub num_indices: u32,
 
-    pub texture_pack: TexturePack,
+    pub textures: TexturePack,
+
+    pub camera: Camera,
+    pub camera_gpu_handle: GpuCameraHandle,
 }
 
 impl RenderProcessor {
 
-    pub fn new(gx: &mut WgpuCore, settings: &RenderSettings) -> RenderProcessor {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, settings: &RenderSettings) -> RenderProcessor {
 
-        let texture_pack = TexturePack::new(gx, settings.image_data);
+        let textures = TexturePack::new(device, queue, settings.image_data);
 
-        let (shader, layout, pipeline) = build_render_pipe(
-            gx, 
-            &format!("{}_render-pipeline", settings.label),
-            settings.shader_src, 
-            settings.vertex_entry_point,
-            settings.fragment_entry_point,
-            &texture_pack
-        );
+        // let (shader, layout, pipeline) = build_render_pipe(
+        //     gx, 
+        //     &format!("{}_render-pipeline", settings.label),
+        //     settings.shader_src, 
+        //     settings.vertex_entry_point,
+        //     settings.fragment_entry_point,
+        //     &textures
+        // );
+
+        let texture_format = canvas.config.format;
+
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some(&format!("{}_render-shader", settings.label)),
+            source: wgpu::ShaderSource::Wgsl(settings.shader_src.into()),
+        });
+
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some(&format!("{}_render-layout", settings.label)),
+            bind_group_layouts: &[&textures.bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some(&format!("{}_render-pipeline", settings.label)),
+            layout: Some(&layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: settings.vertex_entry_point,
+                buffers: &[Vertex::desc()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: settings.fragment_entry_point,
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: texture_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+        });
 
         let uv_scale = [0.5, 0.5];
         let shape = crate::shapes::create_square(uv_scale);
 
-        let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(gx);
+        let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
 
         let num_vertices = shape.vertices.len() as u32;
         let num_indices = shape.indices.len() as u32;
-        
+
+        let camera = Camera::default();
+        let camera_uniform = CameraUniform::new();
+        let camera_gpu_handle = GpuCameraHandle::new(device, camera_uniform);
+
         RenderProcessor { 
             shader, 
             pipeline, 
             layout,
+
             vertex_buffer, 
             index_buffer, 
             num_vertices, 
             num_indices,
 
-            texture_pack,
+            textures,
+
+            camera,
+            camera_gpu_handle,
         }
     }
 
-}
-
-pub fn build_render_pipe(
-    core: &WgpuCore, 
-    label: &str, 
-    shader_src: &str, 
-    vertex_entry_point: &str, 
-    fragment_entry_point: &str,
-    texture_pack: &TexturePack,
-
-) -> (ShaderModule, PipelineLayout, RenderPipeline) 
-{
-    let texture_format = core.canvas.as_ref()
-        .expect("Canvas not available! Try passing WindowSettings when creating a new WgpuCore.")
-        .config.format;
-
-    let shader = core.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(&format!("{}_shader", label)),
-        source: wgpu::ShaderSource::Wgsl(shader_src.into()),
-    });
-
-    let layout = core.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some(&format!("{}_layout", label)),
-        bind_group_layouts: &[&texture_pack.bind_group_layout],
-        push_constant_ranges: &[],
-    });
-
-    let pipeline = core.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some(&format!("{}_pipeline", label)),
-        layout: Some(&layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: vertex_entry_point,
-            buffers: &[Vertex::desc()],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: fragment_entry_point,
-            targets: &[Some(wgpu::ColorTargetState {
-                format: texture_format,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw,
-            cull_mode: Some(wgpu::Face::Back),
-            polygon_mode: wgpu::PolygonMode::Fill,
-            unclipped_depth: false,
-            conservative: false,
-        },
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-    });
-    
-    (shader, layout, pipeline)
 }

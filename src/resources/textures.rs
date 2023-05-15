@@ -17,7 +17,7 @@ pub struct TexturePack {
 
 impl TexturePack {
 
-    pub fn new(gx: &WgpuCore, bytes: &'static [u8]) -> Self {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &'static [u8]) -> Self {
         let image = image::load_from_memory(bytes).unwrap();
         let image_buffer = image.to_rgba8();
 
@@ -34,7 +34,7 @@ impl TexturePack {
 
         let uv_scale = [0.5; 2];
 
-        let texture = gx.device.create_texture(
+        let texture = device.create_texture(
             &wgpu::TextureDescriptor {
                 size,
                 mip_level_count: 1,
@@ -47,7 +47,7 @@ impl TexturePack {
             }
         );
 
-        gx.queue.write_texture(
+        queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &texture,
                 mip_level: 0,
@@ -74,7 +74,7 @@ impl TexturePack {
             array_layer_count: None, //NonZeroU32::new(size.depth_or_array_layers),
         });
 
-        let sampler = gx.device.create_sampler(&wgpu::SamplerDescriptor {
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("texture_sampler"),
             lod_min_clamp: 0.0,
             lod_max_clamp: 0.0,
@@ -90,7 +90,7 @@ impl TexturePack {
         });
 
         let bind_group_layout =
-            gx.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
@@ -112,7 +112,7 @@ impl TexturePack {
                 label: Some("texture_bind_group_layout"),
             });
         
-            let bind_group = gx.device.create_bind_group(
+            let bind_group = device.create_bind_group(
                 &wgpu::BindGroupDescriptor {
                     layout: &bind_group_layout,
                     entries: &[
@@ -129,7 +129,7 @@ impl TexturePack {
                 }
             );
             
-            let render_pipeline_layout = gx.device.create_pipeline_layout(
+            let render_pipeline_layout = device.create_pipeline_layout(
                 &wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
                     bind_group_layouts: &[&bind_group_layout], // NEW!

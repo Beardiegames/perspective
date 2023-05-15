@@ -2,7 +2,7 @@ use perspective::*;
 
 
 pub struct RenderExample {
-    render: RenderProcessor,
+    renderer: RenderProcessor,
 }
 
 
@@ -10,7 +10,7 @@ impl PerspectiveHandler for RenderExample {
 
     fn startup(gx: &mut WgpuCore) -> Self {
 
-        let render = gx.setup_render_processor(
+        let renderer = gx.setup_render_processor(
             &RenderSettings {
                 label: "RenderExample", 
                 group_index: 0,// represented within shader as @binding
@@ -22,13 +22,13 @@ impl PerspectiveHandler for RenderExample {
 
                 image_data: include_bytes!("textures/cat-sprite.png"),
             }
-        );
+        ).unwrap();
 
-        RenderExample { render }
+        RenderExample { renderer }
     }
 
     fn update(&mut self, gx: &mut WgpuCore) {
-        self.render.vertex_buffer.slice(..);
+        self.renderer.vertex_buffer.slice(..);
     }
 
     #[allow(unused)]
@@ -36,12 +36,12 @@ impl PerspectiveHandler for RenderExample {
         {
             let mut render_pass = ctx.begin_render_pass();
 
-            render_pass.set_pipeline(&self.render.pipeline);
-            render_pass.set_bind_group(0, &self.render.texture_pack.bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.render.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.render.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.set_pipeline(&self.renderer.pipeline);
+            render_pass.set_bind_group(0, &self.renderer.textures.bind_group, &[]);
+            render_pass.set_vertex_buffer(0, self.renderer.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.renderer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-            render_pass.draw_indexed(0..self.render.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..self.renderer.num_indices, 0, 0..1);
         }
 
         gx.queue.submit(std::iter::once(ctx.encoder.finish()));

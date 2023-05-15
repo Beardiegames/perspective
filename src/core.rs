@@ -1,7 +1,9 @@
+use anyhow::Error;
 // use pollster::FutureExt;
 // use wgpu::{InstanceDescriptor};
 use raw_window_handle::*;
 
+pub use crate::camera::*;
 pub use crate::processors::*;
 pub use crate::resources::*;
 
@@ -44,7 +46,9 @@ impl WgpuCore {
         ComputeProcessor::new(self, settings)
     }
 
-    pub fn setup_render_processor(&mut self, settings: &RenderSettings) -> RenderProcessor {
-        RenderProcessor::new(self, settings)
+    pub fn setup_render_processor(&mut self, settings: &RenderSettings) -> anyhow::Result<RenderProcessor> {
+        self.canvas.as_ref()
+            .map(|c| RenderProcessor::new(&self.device, &self.queue, &c, &settings))
+            .ok_or_else(|| std::fmt::Error.into()) 
     }
 }

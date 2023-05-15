@@ -40,8 +40,8 @@ pub struct Shape {
 
 impl Shape {
 
-    pub fn setup_wgpu_buffers(&self, gx: &mut WgpuCore,) -> (Buffer, Buffer) {
-        let vertex_buffer = gx.device.create_buffer_init(
+    pub fn setup_wgpu_buffers(&self, device: &wgpu::Device,) -> (Buffer, Buffer) {
+        let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(self.vertices.as_slice()),
@@ -49,7 +49,7 @@ impl Shape {
             }
         );
 
-        let index_buffer = gx.device.create_buffer_init(
+        let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: bytemuck::cast_slice(self.indices.as_slice()),

@@ -1,19 +1,21 @@
+pub mod shapes;
 mod core;
 mod builder;
 mod processors;
 mod resources;
-pub mod shapes;
+mod camera;
 
 pub use builder::*;
 pub use crate::core::*;
 pub use processors::*;
 pub use resources::*;
 pub use wgpu::*;
+pub use camera::*;
 
 use winit::{
     event::*,
 	event_loop::{ControlFlow, EventLoop}, 
-	window::{WindowBuilder},
+	window::{Window, WindowBuilder},
     dpi::PhysicalSize,
 };
 
@@ -91,18 +93,16 @@ impl Perspective {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new().build(&event_loop).unwrap();
         
-        let window_settings: WindowSettings<winit::window::Window> = core::WindowSettings { 
+        let window_settings: WindowSettings<Window> = core::WindowSettings { 
             window: &window, 
             width: self.window_size.width, 
             height: self.window_size.height 
         };
-        let mut gx = core::WgpuCore::new(Some(&window_settings))?;
 
+        let mut wgpu_core = core::WgpuCore::new(Some(&window_settings))?;
+        println!("-- perspective run:\n{:?}", wgpu_core.adapter.get_info());
 
-        println!("-- perspective run:\n{:?}", gx.adapter.get_info());
-        
-
-        let mut app = App::startup(&mut gx);
+        let mut app = App::startup(&mut wgpu_core);
 
 
         event_loop.run(move |event, _, control_flow| match event {
@@ -110,7 +110,7 @@ impl Perspective {
                 ref event,
                 window_id,
             } 
-            if window_id == window.id() => if !app.input(&mut gx, event) {
+            if window_id == window.id() => if !app.input(&mut wgpu_core, event) {
                 match event {
     
                     WindowEvent::CloseRequested | WindowEvent::KeyboardInput {
@@ -123,27 +123,27 @@ impl Perspective {
                         ..
                     } => *control_flow = ControlFlow::Exit,
     
-                    WindowEvent::Resized(physical_size) => self.resize(&mut app, &mut gx, physical_size),
+                    WindowEvent::Resized(physical_size) => self.resize(&mut app, &mut wgpu_core, physical_size),
     
-                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => self.resize(&mut app, &mut gx, new_inner_size),
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => self.resize(&mut app, &mut wgpu_core, new_inner_size),
     
                     _ => {}
                 }
             },
     
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                app.update(&mut gx);
+                app.update(&mut wgpu_core);
 
-                let encoder = gx.device.create_command_encoder(&CommandEncoderDescriptor {
+                let encoder = wgpu_core.device.create_command_encoder(&CommandEncoderDescriptor {
                     label: Some("Render Encoder"),
                 });
 
-                match self.render_pipe(&mut app, &mut gx, encoder) {
+                match self.render_pipe(&mut app, &mut wgpu_core, encoder) {
                     Ok(_) => {},
                     Err(PerspectiveError::SurfaceError(e)) => {
                         match e {
                             // Reconfigure the surface if lost
-                            SurfaceError::Lost => self.resize(&mut app, &mut gx, &self.window_size.clone()),
+                            SurfaceError::Lost => self.resize(&mut app, &mut wgpu_core, &self.window_size.clone()),
                             // The system is out of memory, we should probably quit
                             SurfaceError::OutOfMemory => *control_flow = ControlFlow::Exit,
                             // All other errors (Outdated, Timeout) should be resolved by the next frame

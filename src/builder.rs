@@ -8,7 +8,6 @@ impl WgpuCore {
     pub fn new<W>(settings: Option<&WindowSettings<W>>) -> anyhow::Result<Self>
         where W: HasRawWindowHandle + HasRawDisplayHandle,
     {
-
         let instance = wgpu::Instance::new(
                 InstanceDescriptor { 
                     backends: wgpu::Backends::all(), 
