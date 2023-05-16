@@ -1,4 +1,4 @@
-use super::*;
+//use super::*;
 use wgpu::{util::DeviceExt, Buffer};
 
 
@@ -17,7 +17,7 @@ impl Vertex {
         wgpu::vertex_attr_array![
             0 => Float32x3, 
             1 => Float32x3, 
-            2 => Float32x2, 
+            2 => Float32x2,
             3 => Float32x2, 
             4 => Float32x2, 
         ];

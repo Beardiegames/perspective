@@ -1,6 +1,6 @@
-use std::num::{NonZeroU32, NonZeroU8};
+use std::num::{NonZeroU8};
 
-use super::*;
+//use super::*;
 use image::{ImageBuffer, Rgba};
 use wgpu::*;
 
@@ -9,8 +9,8 @@ pub struct TexturePack {
     pub image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     pub size: Extent3d,
     pub texture: Texture,
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
+    pub layout: BindGroupLayout,
+    pub bindgroup: BindGroup,
     pub render_pipeline_layout: PipelineLayout,
     pub uv_scale: [f32; 2],
 }
@@ -89,7 +89,7 @@ impl TexturePack {
             mipmap_filter: wgpu::FilterMode::Nearest,
         });
 
-        let bind_group_layout =
+        let layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
@@ -112,9 +112,9 @@ impl TexturePack {
                 label: Some("texture_bind_group_layout"),
             });
         
-            let bind_group = device.create_bind_group(
+            let bindgroup = device.create_bind_group(
                 &wgpu::BindGroupDescriptor {
-                    layout: &bind_group_layout,
+                    layout: &layout,
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
@@ -132,7 +132,7 @@ impl TexturePack {
             let render_pipeline_layout = device.create_pipeline_layout(
                 &wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&bind_group_layout], // NEW!
+                    bind_group_layouts: &[&layout], // NEW!
                     push_constant_ranges: &[],
                 }
             );
@@ -141,8 +141,8 @@ impl TexturePack {
             image_buffer,
             size,
             texture,
-            bind_group_layout,
-            bind_group,
+            layout,
+            bindgroup,
             render_pipeline_layout,
             uv_scale,
         }

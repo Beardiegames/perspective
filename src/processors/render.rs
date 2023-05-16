@@ -1,7 +1,7 @@
 use crate::shapes::Vertex;
 
 use super::*;
-use wgpu::util::DeviceExt;
+//use wgpu::util::DeviceExt;
 
 
 pub struct RenderSettings<'a> {
@@ -29,6 +29,7 @@ pub struct RenderProcessor {
     pub textures: TexturePack,
 
     pub camera: Camera,
+    pub camera_uniform: CameraUniform,
     pub camera_gpu_handle: GpuCameraHandle,
 }
 
@@ -49,6 +50,10 @@ impl RenderProcessor {
 
         let texture_format = canvas.config.format;
 
+        let camera = Camera::default();
+        let camera_uniform = CameraUniform::new();
+        let camera_gpu_handle = GpuCameraHandle::new(device, camera_uniform);
+
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("{}_render-shader", settings.label)),
             source: wgpu::ShaderSource::Wgsl(settings.shader_src.into()),
@@ -56,7 +61,10 @@ impl RenderProcessor {
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&format!("{}_render-layout", settings.label)),
-            bind_group_layouts: &[&textures.bind_group_layout],
+            bind_group_layouts: &[
+                &textures.layout,
+                &camera_gpu_handle.layout,
+            ],
             push_constant_ranges: &[],
         });
 
@@ -103,9 +111,7 @@ impl RenderProcessor {
         let num_vertices = shape.vertices.len() as u32;
         let num_indices = shape.indices.len() as u32;
 
-        let camera = Camera::default();
-        let camera_uniform = CameraUniform::new();
-        let camera_gpu_handle = GpuCameraHandle::new(device, camera_uniform);
+        
 
         RenderProcessor { 
             shader, 
@@ -120,6 +126,7 @@ impl RenderProcessor {
             textures,
 
             camera,
+            camera_uniform,
             camera_gpu_handle,
         }
     }

@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
-use crate::*;
+//use crate::*;
 
 
 #[rustfmt::skip]
@@ -14,7 +14,7 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 pub struct GpuCameraHandle {
     pub buffer: wgpu::Buffer,
     pub layout: wgpu::BindGroupLayout,
-    pub binding: wgpu::BindGroup,
+    pub bindgroup: wgpu::BindGroup,
 }
 
 impl GpuCameraHandle {
@@ -43,7 +43,7 @@ impl GpuCameraHandle {
             label: Some("camera_bind_group_layout"),
         });
         
-        let binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -54,7 +54,7 @@ impl GpuCameraHandle {
             label: Some("camera_bind_group"),
         });
         
-        GpuCameraHandle { buffer, layout, binding }
+        GpuCameraHandle { buffer, layout, bindgroup }
     }
 }
 

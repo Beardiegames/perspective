@@ -3,14 +3,15 @@ mod core;
 mod builder;
 mod processors;
 mod resources;
-mod camera;
+//mod binding;
+
+use std::time::Instant;
 
 pub use builder::*;
 pub use crate::core::*;
 pub use processors::*;
 pub use resources::*;
 pub use wgpu::*;
-pub use camera::*;
 
 use winit::{
     event::*,
@@ -60,7 +61,7 @@ pub trait PerspectiveHandler {
     fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { false }
 
     #[allow(unused)]
-    fn update(&mut self, gx: &mut WgpuCore) {}
+    fn update(&mut self, gx: &mut WgpuCore, px: &Perspective) {}
 
     #[allow(unused)]
     fn resize(&mut self, width: u32, height: u32) {}
@@ -76,6 +77,7 @@ pub trait PerspectiveHandler {
 }
 
 pub struct Perspective {
+    runtime: Instant,
     window_size: winit::dpi::PhysicalSize<u32>,
 }
 
@@ -83,9 +85,14 @@ impl Perspective {
 
     pub fn new(width: u32, height: u32) -> Self {
         Self {
+            runtime: Instant::now(),
             window_size: PhysicalSize::new(width, height),
         }
     }
+
+    pub fn runtime(&self) -> f64 { self.runtime.elapsed().as_millis() as f64 / 1_000. }
+
+    pub fn window_size(&self) -> (u32, u32) { (self.window_size.width, self.window_size.height) }
 
     pub fn run<App>(mut self) -> anyhow::Result<()> 
         where App: 'static + PerspectiveHandler
@@ -132,7 +139,7 @@ impl Perspective {
             },
     
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                app.update(&mut wgpu_core);
+                app.update(&mut wgpu_core, &self);
 
                 let encoder = wgpu_core.device.create_command_encoder(&CommandEncoderDescriptor {
                     label: Some("Render Encoder"),
