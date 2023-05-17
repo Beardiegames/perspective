@@ -38,16 +38,6 @@ impl RenderProcessor {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, settings: &RenderSettings) -> RenderProcessor {
 
         let textures = TexturePack::new(device, queue, settings.image_data);
-
-        // let (shader, layout, pipeline) = build_render_pipe(
-        //     gx, 
-        //     &format!("{}_render-pipeline", settings.label),
-        //     settings.shader_src, 
-        //     settings.vertex_entry_point,
-        //     settings.fragment_entry_point,
-        //     &textures
-        // );
-
         let texture_format = canvas.config.format;
 
         let camera = Camera::default();
@@ -111,7 +101,6 @@ impl RenderProcessor {
         let num_vertices = shape.vertices.len() as u32;
         let num_indices = shape.indices.len() as u32;
 
-        
 
         RenderProcessor { 
             shader, 

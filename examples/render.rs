@@ -1,11 +1,19 @@
-use cgmath::InnerSpace;
+//use cgmath::InnerSpace;
 use perspective::*;
+
+
+fn main() -> anyhow::Result<()> {
+    Perspective::new(1600, 1200)
+        .run::<RenderExample>()
+}
 
 
 pub struct RenderExample {
     renderer: RenderProcessor,
+    
+    log_counter: u8,
+    frame_tot: f64,
 }
-
 
 impl PerspectiveHandler for RenderExample {
 
@@ -25,12 +33,21 @@ impl PerspectiveHandler for RenderExample {
             }
         ).unwrap();
 
-        RenderExample { renderer }
+        RenderExample { renderer, log_counter: 0, frame_tot: 0.0 }
     }
 
     fn update(&mut self, _gx: &mut WgpuCore, px: &Perspective) {
-        self.renderer.camera.eye.x = (px.runtime() as f32).sin();
-        println!("eye: {:?}", self.renderer.camera.eye);
+        self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
+        self.frame_tot += px.timer.frame_delta();
+
+        if self.log_counter == 255 {
+            println!("frame_delta: {:?} secs", self.frame_tot / 256.0);
+            self.frame_tot = 0.0;
+            self.log_counter = 0;
+        }
+        else {
+            self.log_counter += 1;
+        }
     }
 
     #[allow(unused)]
@@ -53,9 +70,4 @@ impl PerspectiveHandler for RenderExample {
         gx.queue.submit(std::iter::once(ctx.encoder.finish()));
         ctx.output.present();
     }
-}
-
-fn main() -> anyhow::Result<()> {
-    Perspective::new(1600, 1200)
-        .run::<RenderExample>()
 }
