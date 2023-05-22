@@ -61,14 +61,16 @@ impl RunTime {
 }
 
 
-pub struct RenderContext {
+pub struct RenderContext<'a> {
     pub encoder: CommandEncoder, 
     pub view: TextureView, 
+    pub depth_map: &'a TextureView, 
     pub output: SurfaceTexture,
 }
 
-impl RenderContext {
+impl<'a> RenderContext<'a> {
     pub fn begin_render_pass(&mut self) -> RenderPass {
+
         self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -84,7 +86,14 @@ impl RenderContext {
                     store: true,
                 },
             })],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_map,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
         })
     }
 }

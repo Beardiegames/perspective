@@ -66,9 +66,12 @@ impl WgpuCore {
             };
             srf.configure(&device, &config);
 
+            let depth_map = DepthTexture::new(&device, &config);
+
             Canvas {  
                 surface: srf,
-                config
+                config,
+                depth_map
             }
         });
         

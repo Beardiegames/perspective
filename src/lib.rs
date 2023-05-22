@@ -175,8 +175,9 @@ impl Perspective {
                 .map_err(|e| PerspectiveError::SurfaceError(e))?;
 
             let view = output.texture.create_view(&TextureViewDescriptor::default());
+            let depth_map = &c.depth_map.view; 
             
-            return Ok(app.render_pipeline(wgpu_core, RenderContext{ encoder, view, output })); 
+            return Ok(app.render_pipeline(wgpu_core, RenderContext{ encoder, view, depth_map, output })); 
         }
         Err(PerspectiveError::NoCanvas)
     }

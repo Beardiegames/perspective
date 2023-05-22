@@ -18,6 +18,7 @@ pub struct WindowSettings<'a, W>
 pub struct Canvas {
     pub surface: wgpu::Surface,
     pub config: wgpu::SurfaceConfiguration,
+    pub depth_map: DepthTexture,
 }
 
 pub struct WgpuCore {
@@ -36,6 +37,7 @@ impl WgpuCore {
             c.config.width = width;
             c.config.height = height;
             c.surface.configure(&self.device, &c.config);
+            c.depth_map = DepthTexture::new(&self.device, &c.config);
         }
     }
 

@@ -1,6 +1,4 @@
 use std::num::{NonZeroU8};
-
-//use super::*;
 use image::{ImageBuffer, Rgba};
 use wgpu::*;
 
@@ -132,7 +130,7 @@ impl TexturePack {
             let render_pipeline_layout = device.create_pipeline_layout(
                 &wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&layout], // NEW!
+                    bind_group_layouts: &[&layout],
                     push_constant_ranges: &[],
                 }
             );

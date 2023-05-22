@@ -1,7 +1,8 @@
 use crate::shapes::Vertex;
 
 use super::*;
-//use wgpu::util::DeviceExt;
+use cgmath::prelude::*;
+use wgpu::util::DeviceExt;
 
 
 pub struct RenderSettings<'a> {
@@ -27,10 +28,10 @@ pub struct RenderProcessor {
     pub num_indices: u32,
 
     pub textures: TexturePack,
-
     pub camera: Camera,
-    pub camera_uniform: CameraUniform,
-    pub camera_gpu_handle: GpuCameraHandle,
+
+    pub instances: Vec<ObjectInstance>,
+    pub instance_buffer: wgpu::Buffer,
 }
 
 impl RenderProcessor {
@@ -40,9 +41,7 @@ impl RenderProcessor {
         let textures = TexturePack::new(device, queue, settings.image_data);
         let texture_format = canvas.config.format;
 
-        let camera = Camera::default();
-        let camera_uniform = CameraUniform::new();
-        let camera_gpu_handle = GpuCameraHandle::new(device, camera_uniform);
+        let camera = Camera::new(device, CameraSetup::default());
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("{}_render-shader", settings.label)),
@@ -53,7 +52,7 @@ impl RenderProcessor {
             label: Some(&format!("{}_render-layout", settings.label)),
             bind_group_layouts: &[
                 &textures.layout,
-                &camera_gpu_handle.layout,
+                &camera.layout,
             ],
             push_constant_ranges: &[],
         });
@@ -64,7 +63,7 @@ impl RenderProcessor {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: settings.vertex_entry_point,
-                buffers: &[Vertex::desc()],
+                buffers: &[Vertex::desc(), InstanceRaw::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -84,7 +83,13 @@ impl RenderProcessor {
                 unclipped_depth: false,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DepthTexture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -102,6 +107,35 @@ impl RenderProcessor {
         let num_indices = shape.indices.len() as u32;
 
 
+        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
+            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+                let position = cgmath::Vector3 { x: x as f32, y: 0.0, z: z as f32 } - INSTANCE_DISPLACEMENT;
+
+                let rotation = if position.is_zero() {
+                    // this is needed so an object at (0, 0, 0) won't get scaled to zero
+                    // as Quaternions can effect scale if they're not created correctly
+                    cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+                } else {
+                    cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
+                };
+
+                ObjectInstance {
+                    position, rotation,
+                }
+            })
+        }).collect::<Vec<_>>();
+
+        let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
+        let instance_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&instance_data),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+
+
+
         RenderProcessor { 
             shader, 
             pipeline, 
@@ -113,10 +147,10 @@ impl RenderProcessor {
             num_indices,
 
             textures,
-
             camera,
-            camera_uniform,
-            camera_gpu_handle,
+
+            instances,
+            instance_buffer,
         }
     }
 

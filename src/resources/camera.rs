@@ -1,6 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
-//use crate::*;
+
+use crate::WgpuCore;
 
 
 #[rustfmt::skip]
@@ -11,18 +12,80 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.5, 1.0,
 );
 
-pub struct GpuCameraHandle {
+pub type ProjectionSize = f32;
+pub type ProjectionFOV = f32;
+
+pub enum CameraProjection {
+    Orthographic(ProjectionSize),
+    Perspective(ProjectionFOV)
+}
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+pub struct ProjectionMap {
+    view_proj: [[f32; 4]; 4],
+}
+
+impl ProjectionMap {
+    pub fn new() -> Self {
+        use cgmath::SquareMatrix;
+        Self {
+            view_proj: cgmath::Matrix4::identity().into(),
+        }
+    }
+}
+
+
+pub struct CameraSetup {
+    pub eye: cgmath::Point3<f32>,
+    pub target: cgmath::Point3<f32>,
+    pub up: cgmath::Vector3<f32>,
+    pub aspect: f32,
+    pub projection: CameraProjection,
+    pub znear: f32,
+    pub zfar: f32,
+}
+
+impl Default for CameraSetup {
+    fn default() -> Self {
+        CameraSetup {
+            eye: cgmath::Point3{x: 0.0, y: 1.0, z: 2.0},
+            target: cgmath::Point3{x: 0.0, y: 0.0, z: 0.0},
+            up: cgmath::Vector3::unit_y(),
+            aspect: 16.0/9.0,
+            projection: CameraProjection::Perspective(80.0),
+            znear: 0.1,
+            zfar: 100.0,
+        }
+    }
+}
+
+
+pub struct Camera {
+    pub eye: cgmath::Point3<f32>,
+    pub target: cgmath::Point3<f32>,
+    pub up: cgmath::Vector3<f32>,
+    pub aspect: f32,
+    pub projection: CameraProjection,
+    pub znear: f32,
+    pub zfar: f32,
+
+    pub map: ProjectionMap,
+
     pub buffer: wgpu::Buffer,
     pub layout: wgpu::BindGroupLayout,
     pub bindgroup: wgpu::BindGroup,
 }
 
-impl GpuCameraHandle {
-    pub fn new(device: &wgpu::Device, camera_uniform: CameraUniform) -> Self {
+impl Camera {
+    pub fn new(device: &wgpu::Device, setup: CameraSetup) -> Self {
+        let map = ProjectionMap::new();
+
         let buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Camera Buffer"),
-                contents: bytemuck::cast_slice(&[camera_uniform]),
+                contents: bytemuck::cast_slice(&[map]),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             }
         );
@@ -53,31 +116,24 @@ impl GpuCameraHandle {
             ],
             label: Some("camera_bind_group"),
         });
-        
-        GpuCameraHandle { buffer, layout, bindgroup }
+
+        Camera {
+            eye: setup.eye,
+            target: setup.target,
+            up: setup.up,
+            aspect: setup.aspect,
+            projection: setup.projection,
+            znear: setup.znear,
+            zfar: setup.zfar,
+
+            map,
+            buffer,
+            layout,
+            bindgroup,
+        }
     }
-}
 
-pub type ProjectionSize = f32;
-pub type ProjectionFOV = f32;
-
-pub enum CameraProjection {
-    Orthographic(ProjectionSize),
-    Perspective(ProjectionFOV)
-}
-
-pub struct Camera {
-    pub eye: cgmath::Point3<f32>,
-    pub target: cgmath::Point3<f32>,
-    pub up: cgmath::Vector3<f32>,
-    pub aspect: f32,
-    pub projection: CameraProjection,
-    pub znear: f32,
-    pub zfar: f32,
-}
-
-impl Camera {
-    pub fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f32> {
+    pub fn build_view_map(&self) -> cgmath::Matrix4<f32> {
         let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
 
         let proj = match self.projection {
@@ -91,41 +147,14 @@ impl Camera {
 
         return OPENGL_TO_WGPU_MATRIX * proj * view;
     }
-}
 
-impl Default for Camera {
-    fn default() -> Self {
-        Camera {
-            eye: cgmath::Point3{x: 0.0, y: 1.0, z: 2.0},
-            target: cgmath::Point3{x: 0.0, y: 0.0, z: 0.0},
-            up: cgmath::Vector3::unit_y(),
-            aspect: 16.0/9.0,
-            projection: CameraProjection::Perspective(45.0),
-            znear: 0.1,
-            zfar: 100.0,
-        }
+    pub fn update_projection_map(&mut self, gx: &WgpuCore) {
+        self.map.view_proj = self.build_view_map().into();
+
+        gx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.map]));
     }
 }
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct CameraUniform {
-    view_proj: [[f32; 4]; 4],
-}
 
-impl CameraUniform {
-    pub fn new() -> Self {
-        use cgmath::SquareMatrix;
-        Self {
-            view_proj: cgmath::Matrix4::identity().into(),
-        }
-    }
 
-    pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.build_view_projection_matrix().into();
-    }
-}
-
-unsafe impl Pod for CameraUniform {}
-unsafe impl Zeroable for CameraUniform {}
 

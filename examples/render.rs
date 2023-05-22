@@ -50,21 +50,21 @@ impl PerspectiveHandler for RenderExample {
         }
     }
 
-    #[allow(unused)]
     fn render_pipeline(&mut self, gx: &WgpuCore, mut ctx: RenderContext) {
-        self.renderer.camera_uniform.update_view_proj(&self.renderer.camera);
-        gx.queue.write_buffer(&self.renderer.camera_gpu_handle.buffer, 0, bytemuck::cast_slice(&[self.renderer.camera_uniform]));
-
+        self.renderer.camera.update_projection_map(gx);
         {
             let mut render_pass = ctx.begin_render_pass();
 
             render_pass.set_pipeline(&self.renderer.pipeline);
             render_pass.set_bind_group(0, &self.renderer.textures.bindgroup, &[]);
-            render_pass.set_bind_group(1, &self.renderer.camera_gpu_handle.bindgroup, &[]);
+            render_pass.set_bind_group(1, &self.renderer.camera.bindgroup, &[]);
+
             render_pass.set_vertex_buffer(0, self.renderer.vertex_buffer.slice(..));
+            render_pass.set_vertex_buffer(1, self.renderer.instance_buffer.slice(..));
+
             render_pass.set_index_buffer(self.renderer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-            render_pass.draw_indexed(0..self.renderer.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..self.renderer.num_indices, 0, 0..self.renderer.instances.len() as _);
         }
 
         gx.queue.submit(std::iter::once(ctx.encoder.finish()));

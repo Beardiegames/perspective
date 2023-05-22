@@ -19,16 +19,33 @@ struct VertexOutput {
     @location(0) uv: vec2<f32>,
 };
 
+struct InstanceInput {
+    @location(5) model_matrix_0: vec4<f32>,
+    @location(6) model_matrix_1: vec4<f32>,
+    @location(7) model_matrix_2: vec4<f32>,
+    @location(8) model_matrix_3: vec4<f32>,
+};
+
+
 @vertex
 fn vertex_main(
     model: VertexInput,
-) -> VertexOutput {
+    instance: InstanceInput,
+) 
+    -> VertexOutput 
+{
+    let model_matrix = mat4x4<f32>(
+        instance.model_matrix_0,
+        instance.model_matrix_1,
+        instance.model_matrix_2,
+        instance.model_matrix_3,
+    );
     
     var out: VertexOutput;
     out.uv = model.uv_map * model.uv_scale;
     out.uv += model.uv_offset;
 
-    out.clip_position = camera.view_proj * vec4<f32>(model.pos, 1.0);
+    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.pos, 1.0);
     return out;
 }
 
@@ -41,6 +58,10 @@ var t_diffuse: texture_2d<f32>;
 var s_diffuse: sampler;
 
 @fragment
-fn fragment_main(in: VertexOutput) -> @location(0) vec4<f32> {
+fn fragment_main(
+    in: VertexOutput
+) 
+    -> @location(0) vec4<f32> 
+{
     return textureSample(t_diffuse, s_diffuse, in.uv);
 }
