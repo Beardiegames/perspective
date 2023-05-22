@@ -44,12 +44,12 @@ impl RenderProcessor {
         let camera = Camera::new(device, CameraSetup::default());
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(&format!("{}_render-shader", settings.label)),
+            label: Some(&format!("render-shader")),
             source: wgpu::ShaderSource::Wgsl(settings.shader_src.into()),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some(&format!("{}_render-layout", settings.label)),
+            label: Some(&format!("render-layout")),
             bind_group_layouts: &[
                 &textures.layout,
                 &camera.layout,
@@ -58,7 +58,8 @@ impl RenderProcessor {
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some(&format!("{}_render-pipeline", settings.label)),
+            label: Some(&format!("render-pipeline")),
+
             layout: Some(&layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -70,7 +71,7 @@ impl RenderProcessor {
                 entry_point: settings.fragment_entry_point,
                 targets: &[Some(wgpu::ColorTargetState {
                     format: texture_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),

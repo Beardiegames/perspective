@@ -22,8 +22,6 @@ impl TexturePack {
         use image::GenericImageView;
         let dimensions = image.dimensions();
 
-        println!("{:?}", dimensions);
-
         let size = wgpu::Extent3d {
             width: dimensions.0,
             height: dimensions.1,
