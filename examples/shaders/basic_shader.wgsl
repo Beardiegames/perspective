@@ -1,17 +1,18 @@
 // Vertex shader
 
-struct CameraUniform {
-    view_proj: mat4x4<f32>,
+struct UniformData {
+    time: u32,
+    projection_matrix:  mat4x4<f32>,
 };
 @group(1) @binding(0)
-var<uniform> camera: CameraUniform;
+var<uniform> global: UniformData;
 
 struct VertexInput {
     @location(0) pos: vec3<f32>,
     @location(1) col: vec3<f32>,
     @location(2) uv_map: vec2<f32>,
     @location(3) uv_scale: vec2<f32>,
-    @location(4) uv_offset: vec2<f32>,
+    //@location(4) uv_offset: vec2<f32>,
 };
 
 struct VertexOutput {
@@ -24,6 +25,8 @@ struct InstanceInput {
     @location(6) model_matrix_1: vec4<f32>,
     @location(7) model_matrix_2: vec4<f32>,
     @location(8) model_matrix_3: vec4<f32>,
+
+    @location(8) frame: u32,
 };
 
 
@@ -43,9 +46,17 @@ fn vertex_main(
     
     var out: VertexOutput;
     out.uv = model.uv_map * model.uv_scale;
-    out.uv += model.uv_offset;
 
-    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.pos, 1.0);
+    var offset: vec2<f32>;
+    let secs = fract(global.time / 250000);
+    let frame = floor(secs / 250000.0);
+    let unbound_col = (model.uv_scale[0] * frame);
+
+    offset[1] = (floor(unbound_col) * model.uv_scale[1]);
+    offset[0] = unbound_col % 1.0;
+    out.uv += offset;
+
+    out.clip_position = global.projection_matrix * model_matrix * vec4<f32>(model.pos, 1.0);
     return out;
 }
 

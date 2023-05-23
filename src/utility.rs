@@ -1,5 +1,4 @@
 use super::*;
-use std::time::Instant;
 
 
 pub enum PerspectiveError {
@@ -16,52 +15,20 @@ pub trait PerspectiveHandler {
     fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { false }
 
     #[allow(unused)]
-    fn update(&mut self, gx: &mut WgpuCore, px: &Perspective) {}
+    fn update(&mut self, gx: &mut WgpuCore, px: &mut Perspective) {}
 
     #[allow(unused)]
     fn resize(&mut self, width: u32, height: u32) {}
 
     #[allow(unused)]
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut render: RenderContext) {
-        
-        render.begin_render_pass();
-
-        gx.queue.submit(Some(render.encoder.finish()));
-        render.output.present();
-    }
-}
-
-
-pub struct RunTime {
-    instant: Instant,
-    previous: u128,
-    elapsed: u128,
-    frame_delta: f64,
-}
-
-impl RunTime {
-    pub fn new() -> Self {
-        RunTime {
-            instant: Instant::now(),
-            previous: 0,
-            elapsed: 0,
-            frame_delta: 0.0,
-        }
-    }
-
-    pub fn time_step(&mut self) {
-        self.previous = self.elapsed;
-        self.elapsed = self.instant.elapsed().as_micros();
-        self.frame_delta = (self.elapsed - self.previous) as f64 / 1_000_000.0;
-    }
-
-    pub fn elapsed(&self) -> u128 { self.elapsed }
-
-    pub fn frame_delta(&self) -> f64 { self.frame_delta }
+    fn render_pipeline(&mut self, mut ctx: RenderContext) {}
 }
 
 
 pub struct RenderContext<'a> {
+    pub px: &'a Perspective,
+    pub gx: &'a WgpuCore, 
+    
     pub encoder: CommandEncoder, 
     pub view: TextureView, 
     pub depth_map: &'a TextureView, 

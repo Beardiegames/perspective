@@ -28,7 +28,7 @@ pub struct RenderProcessor {
     pub num_indices: u32,
 
     pub textures: TexturePack,
-    pub camera: Camera,
+    pub uniform: UniformDataHandle,
 
     pub instances: Vec<ObjectInstance>,
     pub instance_buffer: wgpu::Buffer,
@@ -41,7 +41,7 @@ impl RenderProcessor {
         let textures = TexturePack::new(device, queue, settings.image_data);
         let texture_format = canvas.config.format;
 
-        let camera = Camera::new(device, CameraSetup::default());
+        let uniform = UniformDataHandle::new(device);
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("render-shader")),
@@ -52,7 +52,7 @@ impl RenderProcessor {
             label: Some(&format!("render-layout")),
             bind_group_layouts: &[
                 &textures.layout,
-                &camera.layout,
+                &uniform.layout,
             ],
             push_constant_ranges: &[],
         });
@@ -122,6 +122,7 @@ impl RenderProcessor {
 
                 ObjectInstance {
                     position, rotation,
+                    frame: 0
                 }
             })
         }).collect::<Vec<_>>();
@@ -135,8 +136,6 @@ impl RenderProcessor {
             }
         );
 
-
-
         RenderProcessor { 
             shader, 
             pipeline, 
@@ -148,11 +147,20 @@ impl RenderProcessor {
             num_indices,
 
             textures,
-            camera,
+            uniform,
 
             instances,
             instance_buffer,
         }
     }
 
+    pub fn update_uniform(&mut self, ctx: &RenderContext) {
+        self.uniform.update(&ctx.px.timer, &ctx.px.camera);
+
+        ctx.gx.queue.write_buffer(
+            &self.uniform.buffer, 
+            0, 
+            bytemuck::cast_slice(&[self.uniform.data])
+        );
+    }
 }

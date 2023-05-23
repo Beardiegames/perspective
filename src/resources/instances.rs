@@ -10,6 +10,8 @@ pub const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(NUM
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct InstanceRaw {
     pub model: [[f32; 4]; 4],
+
+    pub frame: u32,              // sprite current tile presented
 }
 
 impl InstanceRaw {
@@ -48,6 +50,13 @@ impl InstanceRaw {
                     shader_location: 8,
                     format: wgpu::VertexFormat::Float32x4,
                 },
+
+                // Sprite animation frame position
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<u32>() as wgpu::BufferAddress,
+                    shader_location: 9,
+                    format: wgpu::VertexFormat::Uint32,
+                },
             ],
         }
     }
@@ -55,14 +64,19 @@ impl InstanceRaw {
 
 
 pub struct ObjectInstance {
+    // object transform
     pub position: cgmath::Vector3<f32>,
     pub rotation: cgmath::Quaternion<f32>,
+
+    // sprite data
+    pub frame: u32,
 }
 
 impl ObjectInstance {
     pub fn to_raw(&self) -> InstanceRaw {
         InstanceRaw {
             model: (cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation)).into(),
+            frame: self.frame,
         }
     }
 }

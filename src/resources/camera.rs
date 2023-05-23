@@ -21,20 +21,20 @@ pub enum CameraProjection {
 }
 
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone, Pod, Zeroable)]
-pub struct ProjectionMap {
-    view_proj: [[f32; 4]; 4],
-}
+// #[repr(C)]
+// #[derive(Debug, Copy, Clone, Pod, Zeroable)]
+// pub struct ProjectionMap {
+//     view_proj: [[f32; 4]; 4],
+// }
 
-impl ProjectionMap {
-    pub fn new() -> Self {
-        use cgmath::SquareMatrix;
-        Self {
-            view_proj: cgmath::Matrix4::identity().into(),
-        }
-    }
-}
+// impl ProjectionMap {
+//     pub fn new() -> Self {
+//         use cgmath::SquareMatrix;
+//         Self {
+//             view_proj: cgmath::Matrix4::identity().into(),
+//         }
+//     }
+// }
 
 
 pub struct CameraSetup {
@@ -70,53 +70,10 @@ pub struct Camera {
     pub projection: CameraProjection,
     pub znear: f32,
     pub zfar: f32,
-
-    pub map: ProjectionMap,
-
-    pub buffer: wgpu::Buffer,
-    pub layout: wgpu::BindGroupLayout,
-    pub bindgroup: wgpu::BindGroup,
 }
 
 impl Camera {
-    pub fn new(device: &wgpu::Device, setup: CameraSetup) -> Self {
-        let map = ProjectionMap::new();
-
-        let buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Camera Buffer"),
-                contents: bytemuck::cast_slice(&[map]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            }
-        );
-
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("camera_bind_group_layout"),
-        });
-        
-        let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }
-            ],
-            label: Some("camera_bind_group"),
-        });
-
+    pub fn new(setup: CameraSetup) -> Self {
         Camera {
             eye: setup.eye,
             target: setup.target,
@@ -125,11 +82,6 @@ impl Camera {
             projection: setup.projection,
             znear: setup.znear,
             zfar: setup.zfar,
-
-            map,
-            buffer,
-            layout,
-            bindgroup,
         }
     }
 
@@ -148,11 +100,11 @@ impl Camera {
         return OPENGL_TO_WGPU_MATRIX * proj * view;
     }
 
-    pub fn update_projection_map(&mut self, gx: &WgpuCore) {
-        self.map.view_proj = self.build_view_map().into();
+    // pub fn update_projection_map(&mut self, gx: &WgpuCore) {
+    //     self.map.view_proj = self.build_view_map().into();
 
-        gx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.map]));
-    }
+    //     gx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.map]));
+    // }
 }
 
 

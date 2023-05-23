@@ -25,14 +25,14 @@ impl PerspectiveHandler for ComputeExample {
         ComputeExample { compute }
     }
 
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut render: RenderContext) {
-        self.compute.quick_inject_passes(&mut render.encoder);
+    fn render_pipeline(&mut self, mut ctx: RenderContext) {
+        self.compute.quick_inject_passes(&mut ctx.encoder);
 
-        gx.queue.submit(Some(render.encoder.finish()));
+        ctx.gx.queue.submit(Some(ctx.encoder.finish()));
         
         let buffer = self.compute.slice_staging_buffer();
 
-        gx.device.poll(wgpu::Maintain::Wait); 
+        ctx.gx.device.poll(wgpu::Maintain::Wait); 
         
         let data = buffer.get_mapped_range();
 
@@ -50,10 +50,11 @@ impl PerspectiveHandler for ComputeExample {
 
 fn main() -> anyhow::Result<()> {
 
-    Perspective::new(800, 600)
-        .run::<ComputeExample>()?;
-    
-    Ok(())    
+    let window_size = PhysicalSize::new(1600, 1200);
+    let camera_setup = CameraSetup::default();
+
+    Perspective::new(window_size, camera_setup)
+        .run::<ComputeExample>()
 }
 
 

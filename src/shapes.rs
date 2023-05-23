@@ -9,17 +9,17 @@ pub struct Vertex {
     pub col: [f32; 3],
     pub uv_map: [f32; 2],
     pub uv_scale: [f32; 2],
-    pub uv_offset: [f32; 2],
+    //pub uv_offset: [f32; 2],
 }
 
 impl Vertex {
-    pub const ATTRIBS: [wgpu::VertexAttribute; 5] =
+    pub const ATTRIBS: [wgpu::VertexAttribute; 4] =
         wgpu::vertex_attr_array![
             0 => Float32x3, 
             1 => Float32x3, 
             2 => Float32x2,
             3 => Float32x2, 
-            4 => Float32x2, 
+            //4 => Float32x2, 
         ];
 
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -66,9 +66,9 @@ impl Shape {
 pub fn create_triangle(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [0.0, 0.5, 0.0],          col: [0.5, 0.0, 0.5], uv_map: [0.5, 0.0], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.4330127, -0.25, 0.0], col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.0, 0.5, 0.0],          col: [0.5, 0.0, 0.5], uv_map: [0.5, 0.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.4330127, -0.25, 0.0], col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
         ],
         indices: vec![
             0, 2, 1,
@@ -79,10 +79,10 @@ pub fn create_triangle(uv_scale: [f32; 2]) -> Shape {
 pub fn create_square(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [-0.5, 0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.5, 0.5, 0.0],      col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.5, -0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.5, -0.5, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.5, 0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.5, 0.5, 0.0],      col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.5, -0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.5, -0.5, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, }, //uv_offset: [0.0, 0.0] },
         ],
         indices: vec![
             0, 3, 1,
@@ -94,11 +94,11 @@ pub fn create_square(uv_scale: [f32; 2]) -> Shape {
 pub fn create_pentagon(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [-0.0868241, 0.49240386, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.4131759, 0.99240386],      uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.49513406, 0.06958647, 0.0],   col: [0.5, 0.0, 0.5], uv_map: [0.0048659444, 0.56958647],   uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.21918549, -0.44939706, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.28081453, 0.05060294],     uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.35966998, -0.3473291, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.85967, 0.1526709],         uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.44147372, 0.2347359, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.9414737, 0.7347359],       uv_scale, uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.0868241, 0.49240386, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.4131759, 0.99240386],      uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.49513406, 0.06958647, 0.0],   col: [0.5, 0.0, 0.5], uv_map: [0.0048659444, 0.56958647],   uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.21918549, -0.44939706, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.28081453, 0.05060294],     uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.35966998, -0.3473291, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.85967, 0.1526709],         uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.44147372, 0.2347359, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.9414737, 0.7347359],       uv_scale, }, //uv_offset: [0.0, 0.0] },
         ],
         indices: vec![
             0, 1, 4,
@@ -111,14 +111,14 @@ pub fn create_pentagon(uv_scale: [f32; 2]) -> Shape {
 pub fn create_hexagon(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [0.0, 0.0, 0.0],  col: [0.5, 0.5, 0.5],   uv_map: [0.5, 0.5], uv_scale, uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.0, 0.0, 0.0],  col: [0.5, 0.5, 0.5],   uv_map: [0.5, 0.5], uv_scale, }, //uv_offset: [0.0, 0.0] },
 
-            Vertex { pos: [0.0000000, 0.5, 0.0],    col: [1.00, 0.00, 0.00], uv_map: [0.5, 0.00],       uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.4330127, 0.25, 0.0],   col: [0.75, 0.75, 0.00], uv_map: [0.9330127, 0.25], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.00, 1.00, 0.00], uv_map: [0.9330127, 0.75], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [0.0000000, -0.5, 0.0],   col: [0.00, 0.75, 0.75], uv_map: [0.5, 1.00],       uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.4330127, -0.25, 0.0], col: [0.00, 0.00, 1.00], uv_map: [0.0669873, 0.75], uv_scale, uv_offset: [0.0, 0.0] },
-            Vertex { pos: [-0.4330127, 0.25, 0.0],  col: [0.75, 0.00, 0.75], uv_map: [0.0669873, 0.25], uv_scale, uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.0000000, 0.5, 0.0],    col: [1.00, 0.00, 0.00], uv_map: [0.5, 0.00],       uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.4330127, 0.25, 0.0],   col: [0.75, 0.75, 0.00], uv_map: [0.9330127, 0.25], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.00, 1.00, 0.00], uv_map: [0.9330127, 0.75], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [0.0000000, -0.5, 0.0],   col: [0.00, 0.75, 0.75], uv_map: [0.5, 1.00],       uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.4330127, -0.25, 0.0], col: [0.00, 0.00, 1.00], uv_map: [0.0669873, 0.75], uv_scale, }, //uv_offset: [0.0, 0.0] },
+            Vertex { pos: [-0.4330127, 0.25, 0.0],  col: [0.75, 0.00, 0.75], uv_map: [0.0669873, 0.25], uv_scale, }, //uv_offset: [0.0, 0.0] },
         ],
         indices: vec![
             0, 2, 1,

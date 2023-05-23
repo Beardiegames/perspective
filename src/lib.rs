@@ -13,7 +13,7 @@ pub use resources::*;
 pub use utility::*;
 pub use wgpu::*;
 
-use winit::{
+pub use winit::{
     event::*,
 	event_loop::{ControlFlow, EventLoop}, 
 	window::{Window, WindowBuilder},
@@ -22,16 +22,18 @@ use winit::{
 
 
 pub struct Perspective {
-    pub size: winit::dpi::PhysicalSize<u32>,
+    pub size: PhysicalSize<u32>,
+    pub camera: Camera,
     pub timer: RunTime,
 }
 
 impl Perspective {
     /// create a new Perspective instance
     /// @width & height: window size used for bulding window after run is called
-    pub fn new(width: u32, height: u32) -> Self {
+    pub fn new(size: PhysicalSize<u32>, camera_setup: CameraSetup) -> Self {
         Self {
-            size: PhysicalSize::new(width, height),
+            size,
+            camera: Camera::new(camera_setup),
             timer: RunTime::new(),
         }
     }
@@ -84,7 +86,7 @@ impl Perspective {
     
             Event::RedrawRequested(window_id) if window_id == window.id() => self.update(control_flow, app, wgpu_core),
     
-            Event::MainEventsCleared => self.redraw(window),
+            Event::MainEventsCleared => self.redraw(window, ),
     
             _ => {}
         }
@@ -131,7 +133,7 @@ impl Perspective {
     fn update<App>(&mut self, control_flow: &mut ControlFlow, app: &mut App, wgpu_core: &mut WgpuCore)
         where App: PerspectiveHandler
     {
-        app.update( wgpu_core, &self);
+        app.update( wgpu_core, self);
 
         let encoder = wgpu_core.device.create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Render Encoder"),
@@ -177,7 +179,13 @@ impl Perspective {
             let view = output.texture.create_view(&TextureViewDescriptor::default());
             let depth_map = &c.depth_map.view; 
             
-            return Ok(app.render_pipeline(wgpu_core, RenderContext{ encoder, view, depth_map, output })); 
+            return Ok(app.render_pipeline(
+                RenderContext{ 
+                    px: &self, 
+                    gx: &wgpu_core,
+                    encoder, view, depth_map, output, 
+                }
+            )); 
         }
         Err(PerspectiveError::NoCanvas)
     }
@@ -187,7 +195,7 @@ impl Perspective {
     /// RedrawRequested will only trigger once, unless we manually request it.
     fn redraw(&mut self, window: &Window) {
         window.request_redraw();
-        self.timer.time_step(); 
+        self.timer.time_step();
     }
 }
 

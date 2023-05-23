@@ -1,9 +1,11 @@
-//use cgmath::InnerSpace;
 use perspective::*;
 
 
 fn main() -> anyhow::Result<()> {
-    Perspective::new(1600, 1200)
+    let window_size = PhysicalSize::new(1600, 1200);
+    let camera_setup = CameraSetup::default();
+
+    Perspective::new(window_size, camera_setup)
         .run::<RenderExample>()
 }
 
@@ -36,8 +38,8 @@ impl PerspectiveHandler for RenderExample {
         RenderExample { renderer, log_counter: 0, frame_tot: 0.0 }
     }
 
-    fn update(&mut self, _gx: &mut WgpuCore, px: &Perspective) {
-        self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
+    fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
+        px.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
         self.frame_tot += px.timer.frame_delta();
 
         if self.log_counter == 255 {
@@ -50,14 +52,17 @@ impl PerspectiveHandler for RenderExample {
         }
     }
 
-    fn render_pipeline(&mut self, gx: &WgpuCore, mut ctx: RenderContext) {
-        self.renderer.camera.update_projection_map(gx);
+    fn render_pipeline(&mut self, mut ctx: RenderContext) { 
+        // update uniform data 
+        self.renderer.update_uniform(&ctx);
+
+        // start render pass
         {
             let mut render_pass = ctx.begin_render_pass();
 
             render_pass.set_pipeline(&self.renderer.pipeline);
             render_pass.set_bind_group(0, &self.renderer.textures.bindgroup, &[]);
-            render_pass.set_bind_group(1, &self.renderer.camera.bindgroup, &[]);
+            render_pass.set_bind_group(1, &self.renderer.uniform.bindgroup, &[]);
 
             render_pass.set_vertex_buffer(0, self.renderer.vertex_buffer.slice(..));
             render_pass.set_vertex_buffer(1, self.renderer.instance_buffer.slice(..));
@@ -67,7 +72,7 @@ impl PerspectiveHandler for RenderExample {
             render_pass.draw_indexed(0..self.renderer.num_indices, 0, 0..self.renderer.instances.len() as _);
         }
 
-        gx.queue.submit(std::iter::once(ctx.encoder.finish()));
-        ctx.output.present();
+        ctx.gx.queue.submit(std::iter::once(ctx.encoder.finish()));
+        ctx.output.present(); 
     }
 }
