@@ -31,6 +31,7 @@ pub struct RenderProcessor {
     pub textures: TexturePack,
     pub camera: Camera,
     pub sprite: SpriteGpuHandle,
+    pub light: Light,
 
     pub instances: Vec<ObjectInstance>,
     pub instance_buffer: wgpu::Buffer,
@@ -41,7 +42,8 @@ impl RenderProcessor {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, settings: &RenderSettings) -> RenderProcessor {
         // Setup uniform bindings
 
-        let camera = Camera::new(device, &settings.camera_setup);
+        let camera: Camera = Camera::new(device, &settings.camera_setup);
+        let light: Light = Light::new(device);
 
 
         // Setup fragment bindings
@@ -64,9 +66,9 @@ impl RenderProcessor {
             .map(|instance_idx| {
                 let hwidth = NUM_INSTANCES_PER_ROW as f32 * 0.5;
                 let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
-                let z = (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+                let z = ((instance_idx as f32).cos() / 2.0) + (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
 
-                let position = cgmath::Vector3 { x: x * 1.1, y: 0.0, z: z * 0.5 } - INSTANCE_DISPLACEMENT;
+                let position = cgmath::Vector3 { x: x, y: 0.0, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
                 let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
                 
                 ObjectInstance { instance_idx, position, rotation, }
@@ -115,22 +117,23 @@ impl RenderProcessor {
         // Build pipeline
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(&format!("render-shader")),
+            label: Some(&format!("Shader Module")),
             source: wgpu::ShaderSource::Wgsl(settings.shader_src.into()),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some(&format!("render-layout")),
+            label: Some(&format!("Pipeline Layout")),
             bind_group_layouts: &[
                 &textures.layout,
                 &camera.layout,
                 &sprite.layout,
+                &light.layout,
             ],
             push_constant_ranges: &[],
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some(&format!("render-pipeline")),
+            label: Some(&format!("Render Pipeline")),
 
             layout: Some(&layout),
             vertex: wgpu::VertexState {
@@ -184,6 +187,7 @@ impl RenderProcessor {
             textures,
             camera,
             sprite,
+            light,
 
             instances,
             instance_buffer,

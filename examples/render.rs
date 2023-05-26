@@ -38,8 +38,11 @@ impl PerspectiveHandler for RenderExample {
     }
 
     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
-        self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
+        self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 5_000_000.0).sin();
         self.frame_tot += px.timer.frame_delta();
+
+        self.renderer.light.uniform.position[0] = 0.0 + ((px.timer.elapsed() as f32) / 500_000.0).cos() * 4.0;
+        self.renderer.light.uniform.position[2] = -3.0 + ((px.timer.elapsed() as f32) / 500_000.0).sin() * 4.0;
 
         if self.log_counter == 255 {
             println!("frame_delta: {:?} secs", self.frame_tot / 256.0);
@@ -55,6 +58,7 @@ impl PerspectiveHandler for RenderExample {
         // pre render pass -- update buffer data
         self.renderer.camera.buffer_update(&ctx.gx);
         self.renderer.sprite.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
+        self.renderer.light.buffer_update(&ctx.gx);
 
         // start render pass
         {
@@ -64,6 +68,7 @@ impl PerspectiveHandler for RenderExample {
             render_pass.set_bind_group(0, &self.renderer.textures.bindgroup, &[]);
             render_pass.set_bind_group(1, &self.renderer.camera.bindgroup, &[]);
             render_pass.set_bind_group(2, &self.renderer.sprite.bindgroup, &[]);
+            render_pass.set_bind_group(3, &self.renderer.light.bindgroup, &[]);
 
             render_pass.set_vertex_buffer(0, self.renderer.vertex_buffer.slice(..));
             render_pass.set_vertex_buffer(1, self.renderer.instance_buffer.slice(..));
