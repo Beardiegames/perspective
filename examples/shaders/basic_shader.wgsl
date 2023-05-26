@@ -17,14 +17,17 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
+    @location(0) index: u32,
+    @location(1) uv: vec2<f32>,
 };
 
 struct InstanceInput {
-    @location(5) model_matrix_0: vec4<f32>,
-    @location(6) model_matrix_1: vec4<f32>,
-    @location(7) model_matrix_2: vec4<f32>,
-    @location(8) model_matrix_3: vec4<f32>,
+    @location(5) index: u32,
+
+    @location(6) model_matrix_0: vec4<f32>,
+    @location(7) model_matrix_1: vec4<f32>,
+    @location(8) model_matrix_2: vec4<f32>,
+    @location(9) model_matrix_3: vec4<f32>,
 };
 
 @vertex
@@ -42,6 +45,7 @@ fn vertex_main(
     );
     
     var out: VertexOutput;
+    out.index = instance.index;
     out.uv = model.uv_map * model.uv_scale;
     
     out.clip_position = camera.projection_matrix * model_matrix * vec4<f32>(model.pos, 1.0);
@@ -60,35 +64,17 @@ var s_diffuse: sampler;
 @group(2) @binding(0) 
 var<storage> sprite_frames: array<vec2<f32>>;
 
-struct SpriteAnimationData {
-    start: u32,
-    end: u32,
-    head: u32,
-};
 @group(2) @binding(1) 
-var<storage, read_write> animation: SpriteAnimationData;
-
-@group(2) @binding(2) 
 var<uniform> frames_passed: u32;
 
+struct SpriteAnimationData {
+    frames: vec2<u32>,
+    offset: u32,
+    head: u32,
+};
+@group(2) @binding(2) 
+var<storage, read_write> animations: array<SpriteAnimationData>;
 
-fn sprite_animation() -> vec2<f32> {
-    var head: u32 = animation.head;
-
-    if head < animation.start {
-        head = animation.start;
-    }
-
-    var len: u32 = 1u + animation.end - animation.start;
-    head = frames_passed % len;
-
-    // if head >= arrayLength(&sprite_frames) {
-    //     head = 0u;
-    // }
-
-    animation.head = head;
-    return sprite_frames[head];
-}
 
 @fragment
 fn fragment_main(
@@ -96,6 +82,27 @@ fn fragment_main(
 ) 
     -> @location(0) vec4<f32> 
 {
-    let uv = in.uv + sprite_animation();
+    let uv = in.uv + sprite_animation(in.index);
     return textureSample(t_diffuse, s_diffuse, uv);
+}
+
+fn sprite_animation(i: u32) -> vec2<f32> {
+    var head: u32 = animations[i].head;
+    var start = animations[i].frames.x;
+    var end = animations[i].frames.y;
+    var offset = animations[i].offset;
+
+    if head < start {
+        head = start;
+    }
+
+    var len: u32 = 1u + end - start;
+    head = (frames_passed + offset) % len;
+
+    if head >= arrayLength(&sprite_frames) {
+        head = 0u;
+    }
+
+    animations[i].head = head;
+    return sprite_frames[head];
 }

@@ -27,7 +27,7 @@ impl RunTime {
 
             sprite_frames: 0,
             sprite_counter: 0,
-            sprite_delay: 100_000,
+            sprite_delay: 70_000,
         }
     }
 

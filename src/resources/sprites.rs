@@ -1,3 +1,5 @@
+use std::{num, f32::consts::PI};
+
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::{DeviceExt, BufferInitDescriptor};
 
@@ -9,7 +11,7 @@ pub type SpriteFrameElement = [f32; 2];
 
 pub struct SpriteGpuHandle {
     pub frames: SpriteFramesBuffer,
-    pub animation: SpriteAnimationHandle,
+    pub animations: SpriteAnimationHandle,
     pub timer: SpriteTimerBuffer,
     
     pub layout: wgpu::BindGroupLayout,
@@ -17,9 +19,9 @@ pub struct SpriteGpuHandle {
 }
 
 impl SpriteGpuHandle {
-    pub fn new(device: &wgpu::Device, spriteframes: Vec<SpriteFrameElement>) -> Self {
+    pub fn new(device: &wgpu::Device, spriteframes: Vec<SpriteFrameElement>, num_instances: usize) -> Self {
         let frames = SpriteFramesBuffer::new(device, spriteframes);
-        let animation = SpriteAnimationHandle::new(device);
+        let animations = SpriteAnimationHandle::new(device, num_instances);
         let timer = SpriteTimerBuffer::new(device);
 
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -39,7 +41,7 @@ impl SpriteGpuHandle {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -49,12 +51,12 @@ impl SpriteGpuHandle {
                     binding: 2,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
                     count: None,
-                }
+                },
             ],
         });
 
@@ -68,18 +70,18 @@ impl SpriteGpuHandle {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: animation.buffer.as_entire_binding(),
+                    resource: timer.buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: timer.buffer.as_entire_binding(),
-                }
+                    resource: animations.buffer.as_entire_binding(),
+                },
             ],
         });
 
         SpriteGpuHandle {
             frames,
-            animation,
+            animations,
             timer,
 
             layout,
@@ -102,8 +104,8 @@ impl SpriteGpuHandle {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct SpriteAnimationData {
-    start: u32,
-    end: u32,
+    frames: [u32; 2],
+    offset: u32,
     head: u32,
 }
 
@@ -112,15 +114,21 @@ pub struct SpriteAnimationHandle {
 }
 
 impl SpriteAnimationHandle {
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, num_instances: usize) -> Self {
 
-        let data = SpriteAnimationData { 
-            start: 0, end: 3, head: 0
-        };
+        let mut animation_instances = Vec::<SpriteAnimationData>::new();
+
+        for i in 0..num_instances {
+            animation_instances.push(SpriteAnimationData { 
+                frames: [0, 3], 
+                head: 0,
+                offset: (i as f32 * PI) as u32 % 10,
+            });
+        }
 
         let buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some(&format!("Sprite Animation Buffer")),
-            contents: bytemuck::cast_slice(&[data]),
+            contents: bytemuck::cast_slice(animation_instances.as_slice()),
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST, 
         });
 
@@ -148,7 +156,7 @@ impl SpriteFramesBuffer {
 
 
 pub struct SpriteTimerBuffer {
-    pub frames_passed: u32, // micro seconds
+    pub frames_passed: u32, // total number of sprite animation frames
     pub buffer: wgpu::Buffer,
 }
 

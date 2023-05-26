@@ -39,16 +39,80 @@ pub struct RenderProcessor {
 impl RenderProcessor {
 
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, settings: &RenderSettings) -> RenderProcessor {
+        // Setup uniform bindings
+
+        let camera = Camera::new(device, &settings.camera_setup);
+
+
+        // Setup fragment bindings
 
         let textures = TexturePack::new(device, queue, settings.image_data);
         let texture_format = canvas.config.format;
 
         let uv_scale = [0.5, 0.5];
-        let sprite = SpriteGpuHandle::new(device, vec![
-            [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
-        ]);
 
-        let camera = Camera::new(device, &settings.camera_setup);
+
+        // Setup vertex bindings
+
+        let shape = crate::shapes::create_square(uv_scale);
+        let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
+
+        let num_vertices = shape.vertices.len() as u32;
+        let num_indices = shape.indices.len() as u32;
+
+        let instances = (0..NUM_INSTANCES_PER_ROW * NUM_INSTANCES_PER_ROW)
+            .map(|instance_idx| {
+                let hwidth = NUM_INSTANCES_PER_ROW as f32 * 0.5;
+                let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+                let z = (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+
+                let position = cgmath::Vector3 { x: x * 1.1, y: 0.0, z: z * 0.5 } - INSTANCE_DISPLACEMENT;
+                let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
+                
+                ObjectInstance { instance_idx, position, rotation, }
+            })
+            .collect::<Vec<_>>();           
+        
+        // (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
+        //     (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+        //         let position = cgmath::Vector3 { x: x as f32, y: 0.0, z: z as f32 } - INSTANCE_DISPLACEMENT;
+
+        //         // let rotation = if position.is_zero() {
+        //         //     // this is needed so an object at (0, 0, 0) won't get scaled to zero
+        //         //     // as Quaternions can effect scale if they're not created correctly
+        //         //     cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+        //         // } else {
+        //         //     cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
+        //         // };
+
+        //         let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
+
+        //         ObjectInstance { position, rotation, }
+        //     })
+        // }).collect::<Vec<_>>();
+
+        let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
+        let instance_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&instance_data),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+
+
+        // Setup sprite animation bindings
+
+        let sprite = SpriteGpuHandle::new(
+            device, 
+            vec![
+                [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
+            ],
+            instances.len()
+        );
+
+
+        // Build pipeline
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("render-shader")),
@@ -72,7 +136,7 @@ impl RenderProcessor {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: settings.vertex_entry_point,
-                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+                buffers: &[Vertex::desc(), InstanceRaw::layout()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -106,40 +170,6 @@ impl RenderProcessor {
             },
             multiview: None,
         });
-
-        let shape = crate::shapes::create_square(uv_scale);
-        let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
-
-        let num_vertices = shape.vertices.len() as u32;
-        let num_indices = shape.indices.len() as u32;
-
-
-        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
-            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                let position = cgmath::Vector3 { x: x as f32, y: 0.0, z: z as f32 } - INSTANCE_DISPLACEMENT;
-
-                // let rotation = if position.is_zero() {
-                //     // this is needed so an object at (0, 0, 0) won't get scaled to zero
-                //     // as Quaternions can effect scale if they're not created correctly
-                //     cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
-                // } else {
-                //     cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
-                // };
-
-                let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
-
-                ObjectInstance { position, rotation, }
-            })
-        }).collect::<Vec<_>>();
-
-        let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Instance Buffer"),
-                contents: bytemuck::cast_slice(&instance_data),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
 
         RenderProcessor { 
             shader, 

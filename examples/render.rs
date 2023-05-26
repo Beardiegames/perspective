@@ -52,7 +52,7 @@ impl PerspectiveHandler for RenderExample {
     }
 
     fn render_pipeline(&mut self, mut ctx: RenderContext) { 
-        // pre render queue
+        // pre render pass -- update buffer data
         self.renderer.camera.buffer_update(&ctx.gx);
         self.renderer.sprite.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
 
