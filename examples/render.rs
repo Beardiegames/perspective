@@ -12,7 +12,7 @@ pub struct RenderExample {
     renderer: RenderProcessor,
     
     log_counter: u8,
-    frame_tot: f64,
+    frame_tot: f32,
 }
 
 impl PerspectiveHandler for RenderExample {
@@ -54,6 +54,7 @@ impl PerspectiveHandler for RenderExample {
     fn render_pipeline(&mut self, mut ctx: RenderContext) { 
         // pre render queue
         self.renderer.camera.buffer_update(&ctx.gx);
+        self.renderer.sprite.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
 
         // start render pass
         {

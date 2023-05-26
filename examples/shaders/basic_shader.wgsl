@@ -64,38 +64,30 @@ struct SpriteAnimationData {
     start: u32,
     end: u32,
     head: u32,
-    delay: u32,
-    count: u32,
 };
 @group(2) @binding(1) 
 var<storage, read_write> animation: SpriteAnimationData;
 
+@group(2) @binding(2) 
+var<uniform> frames_passed: u32;
+
+
 fn sprite_animation() -> vec2<f32> {
     var head: u32 = animation.head;
-    var count: u32 = animation.count;
 
     if head < animation.start {
         head = animation.start;
     }
-    if count >= animation.delay {
-        count = 0u;
-        head = head + 1u;
-    }
-    else {
-        count = count + 1u;
-    }
 
-    if head > animation.end {
-        head = animation.start;
-    }
+    var len: u32 = 1u + animation.end - animation.start;
+    head = frames_passed % len;
 
-    if head >= arrayLength(&sprite_frames) {
-        head = 0u;
-    }
+    // if head >= arrayLength(&sprite_frames) {
+    //     head = 0u;
+    // }
 
     animation.head = head;
-    animation.count = count;
-    return sprite_frames[animation.head];
+    return sprite_frames[head];
 }
 
 @fragment
