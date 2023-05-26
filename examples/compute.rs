@@ -51,10 +51,8 @@ impl PerspectiveHandler for ComputeExample {
 fn main() -> anyhow::Result<()> {
 
     let window_size = PhysicalSize::new(1600, 1200);
-    let camera_setup = CameraSetup::default();
 
-    Perspective::new(window_size, camera_setup)
-        .run::<ComputeExample>()
+    Perspective::new(window_size).run::<ComputeExample>()
 }
 
 

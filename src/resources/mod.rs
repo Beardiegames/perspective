@@ -3,7 +3,7 @@ mod camera;
 mod instances;
 mod depth;
 mod timer;
-mod uniform;
+mod sprites;
 
 //use super::*;
 pub use textures::*;
@@ -11,4 +11,4 @@ pub use camera::*;
 pub use instances::*;
 pub use depth::*;
 pub use timer::*;
-pub use uniform::*;
+pub use sprites::*;

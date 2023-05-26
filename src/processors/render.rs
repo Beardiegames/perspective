@@ -15,6 +15,7 @@ pub struct RenderSettings<'a> {
     pub fragment_entry_point: &'a str, // name of the fragment entry funcion/methode, called on fragment update
 
     pub image_data: &'static [u8],
+    pub camera_setup: CameraSetup,
 }
 
 pub struct RenderProcessor {
@@ -28,7 +29,8 @@ pub struct RenderProcessor {
     pub num_indices: u32,
 
     pub textures: TexturePack,
-    pub uniform: UniformDataHandle,
+    pub camera: Camera,
+    pub sprite: SpriteGpuHandle,
 
     pub instances: Vec<ObjectInstance>,
     pub instance_buffer: wgpu::Buffer,
@@ -41,7 +43,12 @@ impl RenderProcessor {
         let textures = TexturePack::new(device, queue, settings.image_data);
         let texture_format = canvas.config.format;
 
-        let uniform = UniformDataHandle::new(device);
+        let uv_scale = [0.5, 0.5];
+        let sprite = SpriteGpuHandle::new(device, vec![
+            [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
+        ]);
+
+        let camera = Camera::new(device, &settings.camera_setup);
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("render-shader")),
@@ -52,7 +59,8 @@ impl RenderProcessor {
             label: Some(&format!("render-layout")),
             bind_group_layouts: &[
                 &textures.layout,
-                &uniform.layout,
+                &camera.layout,
+                &sprite.layout,
             ],
             push_constant_ranges: &[],
         });
@@ -99,9 +107,7 @@ impl RenderProcessor {
             multiview: None,
         });
 
-        let uv_scale = [0.5, 0.5];
         let shape = crate::shapes::create_square(uv_scale);
-
         let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
 
         let num_vertices = shape.vertices.len() as u32;
@@ -120,10 +126,7 @@ impl RenderProcessor {
                     cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
                 };
 
-                ObjectInstance {
-                    position, rotation,
-                    frame: 0
-                }
+                ObjectInstance { position, rotation, }
             })
         }).collect::<Vec<_>>();
 
@@ -147,20 +150,21 @@ impl RenderProcessor {
             num_indices,
 
             textures,
-            uniform,
+            camera,
+            sprite,
 
             instances,
             instance_buffer,
         }
     }
 
-    pub fn update_uniform(&mut self, ctx: &RenderContext) {
-        self.uniform.update(&ctx.px.timer, &ctx.px.camera);
+    // pub fn update_uniform(&mut self, ctx: &RenderContext) {
+    //     self.uniform.update(&ctx.px.timer, &ctx.px.camera);
 
-        ctx.gx.queue.write_buffer(
-            &self.uniform.buffer, 
-            0, 
-            bytemuck::cast_slice(&[self.uniform.data])
-        );
-    }
+    //     ctx.gx.queue.write_buffer(
+    //         &self.camera.buffer, 
+    //         0, 
+    //         bytemuck::cast_slice(&[self.uniform.data])
+    //     );
+    // }
 }

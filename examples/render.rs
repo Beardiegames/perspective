@@ -3,10 +3,8 @@ use perspective::*;
 
 fn main() -> anyhow::Result<()> {
     let window_size = PhysicalSize::new(1600, 1200);
-    let camera_setup = CameraSetup::default();
-
-    Perspective::new(window_size, camera_setup)
-        .run::<RenderExample>()
+    
+    Perspective::new(window_size).run::<RenderExample>()
 }
 
 
@@ -32,6 +30,7 @@ impl PerspectiveHandler for RenderExample {
                 fragment_entry_point: "fragment_main",
 
                 image_data: include_bytes!("textures/cat-sprite.png"),
+                camera_setup: CameraSetup::default(),
             }
         ).unwrap();
 
@@ -39,7 +38,7 @@ impl PerspectiveHandler for RenderExample {
     }
 
     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
-        px.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
+        self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 1_000_000.0).sin();
         self.frame_tot += px.timer.frame_delta();
 
         if self.log_counter == 255 {
@@ -53,8 +52,8 @@ impl PerspectiveHandler for RenderExample {
     }
 
     fn render_pipeline(&mut self, mut ctx: RenderContext) { 
-        // update uniform data 
-        self.renderer.update_uniform(&ctx);
+        // pre render queue
+        self.renderer.camera.buffer_update(&ctx.gx);
 
         // start render pass
         {
@@ -62,7 +61,8 @@ impl PerspectiveHandler for RenderExample {
 
             render_pass.set_pipeline(&self.renderer.pipeline);
             render_pass.set_bind_group(0, &self.renderer.textures.bindgroup, &[]);
-            render_pass.set_bind_group(1, &self.renderer.uniform.bindgroup, &[]);
+            render_pass.set_bind_group(1, &self.renderer.camera.bindgroup, &[]);
+            render_pass.set_bind_group(2, &self.renderer.sprite.bindgroup, &[]);
 
             render_pass.set_vertex_buffer(0, self.renderer.vertex_buffer.slice(..));
             render_pass.set_vertex_buffer(1, self.renderer.instance_buffer.slice(..));

@@ -23,17 +23,15 @@ pub use winit::{
 
 pub struct Perspective {
     pub size: PhysicalSize<u32>,
-    pub camera: Camera,
     pub timer: RunTime,
 }
 
 impl Perspective {
     /// create a new Perspective instance
     /// @width & height: window size used for bulding window after run is called
-    pub fn new(size: PhysicalSize<u32>, camera_setup: CameraSetup) -> Self {
+    pub fn new(size: PhysicalSize<u32>) -> Self {
         Self {
             size,
-            camera: Camera::new(camera_setup),
             timer: RunTime::new(),
         }
     }
