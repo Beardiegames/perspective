@@ -20,7 +20,7 @@ pub struct Light {
 }
 
 impl Light {
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, layout:&wgpu::BindGroupLayout, ) -> Self {
         let uniform = LightUniform {
             position: [2.0, 1.0, 2.0],
             _padding: 0,
@@ -31,7 +31,7 @@ impl Light {
             ambient: [0.03, 0.05, 0.075],
             _padding3: 0,
         };
-        let binding = create_light_binding(device, uniform);
+        let binding = create_light_binding(device, layout, uniform);
         
         Light {
             uniform,

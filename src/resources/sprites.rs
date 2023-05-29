@@ -24,7 +24,12 @@ pub struct SpriteGpuHandle {
 }
 
 impl SpriteGpuHandle {
-    pub fn new(device: &wgpu::Device, spriteframes: Vec<SpriteFrameElement>, num_instances: usize) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        layout:&wgpu::BindGroupLayout,
+        spriteframes: Vec<SpriteFrameElement>, 
+        num_instances: usize
+    ) -> Self {
         let mut animations = Vec::<SpriteAnimationData>::new();
         let frames_passed = 0;
 
@@ -36,7 +41,7 @@ impl SpriteGpuHandle {
             });
         }
 
-        let binding = create_sprite_animation_binding(device, &animations, &spriteframes, frames_passed);
+        let binding = create_sprite_animation_binding(device, layout, &animations, &spriteframes, frames_passed);
 
         SpriteGpuHandle {
             _spriteframes: spriteframes,

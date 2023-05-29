@@ -1,7 +1,65 @@
 use wgpu::{Device, BindGroupLayout};
 
+pub struct PerspectiveShaderLayout {
+    layouts: [BindGroupLayout; 4]
+}
 
-pub fn create_camera_layout(device: &Device) -> BindGroupLayout {
+impl PerspectiveShaderLayout {
+
+    pub fn new(device: &Device) -> Self {
+        let layouts = [
+            texture_layout(device),
+            camera_layout(device),
+            sprite_animation_layout(device),
+            light_layout(device),
+        ];
+        PerspectiveShaderLayout { layouts }
+    }
+
+    pub fn as_slice(&self) -> [&BindGroupLayout; 4] {
+        [
+            &self.layouts[0],
+            &self.layouts[1],
+            &self.layouts[2],
+            &self.layouts[3],
+        ]
+    }
+
+    pub fn texture_layout(&self) -> &BindGroupLayout { &self.layouts[0] }
+
+    pub fn camera_layout(&self) -> &BindGroupLayout { &self.layouts[1] }
+
+    pub fn sprite_layout(&self) -> &BindGroupLayout { &self.layouts[2] }
+
+    pub fn light_layout(&self) -> &BindGroupLayout { &self.layouts[3] }
+}
+
+
+pub fn texture_layout(device: &Device) -> BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    multisampled: false,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+        ],
+        label: Some("texture_bind_group_layout"),
+    })
+}
+
+pub fn camera_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[
             wgpu::BindGroupLayoutEntry {
@@ -19,7 +77,7 @@ pub fn create_camera_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub fn create_light_layout(device: &Device) -> BindGroupLayout {
+pub fn light_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[wgpu::BindGroupLayoutEntry {
             binding: 0,
@@ -35,7 +93,7 @@ pub fn create_light_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub fn create_sprite_animation_layout(device: &Device) -> BindGroupLayout {
+pub fn sprite_animation_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("Sprite Layout"),
         entries: &[

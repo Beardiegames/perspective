@@ -78,9 +78,9 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(device: &wgpu::Device, setup: &CameraSetup) -> Self {
+    pub fn new(device: &wgpu::Device, layout:&wgpu::BindGroupLayout, setup: &CameraSetup) -> Self {
         let uniform = CameraUniform::new();
-        let binding = bindings::create_camera_binding(device, uniform);
+        let binding = bindings::create_camera_binding(device, layout, uniform);
 
         Camera {
             eye: setup.eye,

@@ -7,7 +7,6 @@ pub struct TexturePack {
     pub image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     pub size: Extent3d,
     pub texture: Texture,
-    pub layout: BindGroupLayout,
     pub bindgroup: BindGroup,
     pub render_pipeline_layout: PipelineLayout,
     pub uv_scale: [f32; 2],
@@ -15,7 +14,13 @@ pub struct TexturePack {
 
 impl TexturePack {
 
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &'static [u8]) -> Self {
+    pub fn new(
+        device: &wgpu::Device, 
+        queue: &wgpu::Queue, 
+        layout: &wgpu::BindGroupLayout, 
+        bytes: &[u8]
+    ) -> Self {
+
         let image = image::load_from_memory(bytes).unwrap();
         let image_buffer = image.to_rgba8();
 
@@ -84,60 +89,36 @@ impl TexturePack {
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
         });
-
-        let layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
         
-            let bindgroup = device.create_bind_group(
-                &wgpu::BindGroupDescriptor {
-                    layout: &layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&texture_view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&sampler),
-                        }
-                    ],
-                    label: Some("diffuse_bind_group"),
-                }
-            );
-            
-            let render_pipeline_layout = device.create_pipeline_layout(
-                &wgpu::PipelineLayoutDescriptor {
-                    label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&layout],
-                    push_constant_ranges: &[],
-                }
-            );
+        let bindgroup = device.create_bind_group(
+            &wgpu::BindGroupDescriptor {
+                layout: &layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&texture_view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&sampler),
+                    }
+                ],
+                label: Some("diffuse_bind_group"),
+            }
+        );
+        
+        let render_pipeline_layout = device.create_pipeline_layout(
+            &wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[&layout],
+                push_constant_ranges: &[],
+            }
+        );
 
         Self {
             image_buffer,
             size,
             texture,
-            layout,
             bindgroup,
             render_pipeline_layout,
             uv_scale,
