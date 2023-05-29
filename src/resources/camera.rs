@@ -1,7 +1,7 @@
 use bytemuck::{Pod, Zeroable};
-use wgpu::util::DeviceExt;
-
+use crate::WgpuBinding;
 use crate::WgpuCore;
+use crate::bindings;
 
 
 #[rustfmt::skip]
@@ -74,49 +74,13 @@ pub struct Camera {
     pub zfar: f32,
 
     pub uniform: CameraUniform,
-    pub buffer: wgpu::Buffer,
-    pub layout: wgpu::BindGroupLayout,
-    pub bindgroup: wgpu::BindGroup,
+    pub binding: WgpuBinding,
 }
 
 impl Camera {
     pub fn new(device: &wgpu::Device, setup: &CameraSetup) -> Self {
         let uniform = CameraUniform::new();
-
-        let buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("camera_buffer"),
-                contents: bytemuck::cast_slice(&[uniform]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            }
-        );
-
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("camera_bind_group_layout"),
-        });
-        
-        let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }
-            ],
-            label: Some("camera_bind_group"),
-        });
+        let binding = bindings::create_camera_binding(device, uniform);
 
         Camera {
             eye: setup.eye,
@@ -128,9 +92,7 @@ impl Camera {
             zfar: setup.zfar,
 
             uniform,
-            buffer,
-            layout,
-            bindgroup,
+            binding
         }
     }
 
@@ -151,7 +113,12 @@ impl Camera {
 
     pub fn buffer_update(&mut self, gx: &WgpuCore) {
         self.uniform.projection_matrix = self.build_view_map().into();
-        gx.queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
+        
+        gx.queue.write_buffer(
+            &self.binding.buffers[0], 
+            0, 
+            bytemuck::cast_slice(&[self.uniform])
+        );
     }
 }
 

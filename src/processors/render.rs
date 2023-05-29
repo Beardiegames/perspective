@@ -74,24 +74,6 @@ impl RenderProcessor {
                 ObjectInstance { instance_idx, position, rotation, }
             })
             .collect::<Vec<_>>();           
-        
-        // (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
-        //     (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-        //         let position = cgmath::Vector3 { x: x as f32, y: 0.0, z: z as f32 } - INSTANCE_DISPLACEMENT;
-
-        //         // let rotation = if position.is_zero() {
-        //         //     // this is needed so an object at (0, 0, 0) won't get scaled to zero
-        //         //     // as Quaternions can effect scale if they're not created correctly
-        //         //     cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
-        //         // } else {
-        //         //     cgmath::Quaternion::from_axis_angle(position.normalize(), cgmath::Deg(45.0))
-        //         // };
-
-        //         let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
-
-        //         ObjectInstance { position, rotation, }
-        //     })
-        // }).collect::<Vec<_>>();
 
         let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(
@@ -125,9 +107,9 @@ impl RenderProcessor {
             label: Some(&format!("Pipeline Layout")),
             bind_group_layouts: &[
                 &textures.layout,
-                &camera.layout,
-                &sprite.layout,
-                &light.layout,
+                &camera.binding.layout,
+                &sprite.binding.layout,
+                &light.binding.layout,
             ],
             push_constant_ranges: &[],
         });
@@ -194,13 +176,31 @@ impl RenderProcessor {
         }
     }
 
-    // pub fn update_uniform(&mut self, ctx: &RenderContext) {
-    //     self.uniform.update(&ctx.px.timer, &ctx.px.camera);
+    pub fn execute_render_pipeline(&mut self, mut ctx: RenderContext) {
+        // pre render pass -- update buffer data
+        self.camera.buffer_update(&ctx.gx);
+        self.sprite.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
+        self.light.buffer_update(&ctx.gx);
 
-    //     ctx.gx.queue.write_buffer(
-    //         &self.camera.buffer, 
-    //         0, 
-    //         bytemuck::cast_slice(&[self.uniform.data])
-    //     );
-    // }
+        // start render pass
+        {
+            let mut render_pass = ctx.begin_render_pass();
+
+            render_pass.set_pipeline(&self.pipeline);
+            render_pass.set_bind_group(0, &self.textures.bindgroup, &[]);
+            render_pass.set_bind_group(1, &self.camera.binding.bindgroup, &[]);
+            render_pass.set_bind_group(2, &self.sprite.binding.bindgroup, &[]);
+            render_pass.set_bind_group(3, &self.light.binding.bindgroup, &[]);
+
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
+        }
+
+        ctx.gx.queue.submit(std::iter::once(ctx.encoder.finish()));
+        ctx.output.present(); 
+    }
 }

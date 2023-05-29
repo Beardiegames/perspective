@@ -4,7 +4,7 @@ mod builder;
 mod processors;
 mod resources;
 mod utility;
-//mod binding;
+mod bindings;
 
 pub use builder::*;
 pub use crate::core::*;
@@ -12,6 +12,7 @@ pub use processors::*;
 pub use resources::*;
 pub use utility::*;
 pub use wgpu::*;
+pub use bindings::*;
 
 pub use winit::{
     event::*,

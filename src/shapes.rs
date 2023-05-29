@@ -79,9 +79,9 @@ impl Shape {
 pub fn create_square(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [-0.5, 0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [0.0, 0.0, 0.0] },
-            Vertex { pos: [0.5, 0.5, 0.0],      col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.0, 1.0, 0.0] },
-            Vertex { pos: [0.5, -0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.0, 1.0, 1.0] },
+            Vertex { pos: [-0.5, 0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.5, 0.5, 0.0],      col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.5, -0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
             Vertex { pos: [-0.5, -0.5, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
         ],
         indices: vec![
