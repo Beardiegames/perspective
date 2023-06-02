@@ -11,7 +11,7 @@ use crate::SpriteFrameElement;
 
 pub struct WgpuBinding {
     pub buffers: Vec<wgpu::Buffer>,
-    //pub layout: wgpu::BindGroupLayout,
+    pub layout: wgpu::BindGroupLayout,
     pub bindgroup: wgpu::BindGroup,
 }
 
@@ -41,7 +41,7 @@ pub fn create_camera_binding(
 ) -> WgpuBinding {
 
     let buffers = vec![buffer::create_camera_buffer(device, camera_uniform)];
-    //let layout = layout::create_camera_layout(device);
+    let layout = layout::camera_layout(device);
     
     let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: camera_layout,
@@ -49,17 +49,18 @@ pub fn create_camera_binding(
         label: Some("Camera Bindgroup"),
     });
 
-    WgpuBinding { buffers, bindgroup }
+    WgpuBinding { buffers, layout, bindgroup }
 }
 
-pub fn create_light_binding(
+pub fn create_effects_binding(
     device: &Device,
     light_layout: &BindGroupLayout,
     light_uniform: LightUniform
 ) -> WgpuBinding {
 
     let buffers = vec![buffer::create_light_buffer(device, light_uniform)];
-    //let layout = layout::create_light_layout(device);
+
+    let layout = layout::effects_layout(device);
 
     let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: light_layout,
@@ -67,7 +68,7 @@ pub fn create_light_binding(
         label: Some("Light Bindgroup"),
     });
 
-    WgpuBinding { buffers, bindgroup }
+    WgpuBinding { buffers, layout, bindgroup }
 }
 
 pub fn create_sprite_animation_binding(
@@ -84,7 +85,7 @@ pub fn create_sprite_animation_binding(
         buffer::create_sprite_animation_buffer(device, animations.clone()),
     ];
 
-    //let layout = layout::create_sprite_animation_layout(device);
+    let layout = layout::sprite_animation_layout(device);
 
     let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sprite Bindgroup"),
@@ -92,7 +93,7 @@ pub fn create_sprite_animation_binding(
         entries: buffers.into_entries().as_slice()
     });
 
-    WgpuBinding { buffers, bindgroup }
+    WgpuBinding { buffers, layout, bindgroup }
 }
 
 

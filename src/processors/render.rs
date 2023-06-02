@@ -43,7 +43,6 @@ impl RenderObject {
 
         // Setup fragment bindings
         let texture = TexturePack::new(device, queue, texture_layout, image);
-
         let uv_scale = [0.5, 0.5];
 
         // Setup vertex bindings
@@ -123,6 +122,9 @@ impl RenderObject {
         render_pass.set_bind_group(1, &camera.binding.bindgroup, &[]);
         render_pass.set_bind_group(2, &light.binding.bindgroup, &[]);
         render_pass.set_bind_group(3, &self.sprite.binding.bindgroup, &[]);
+        // for i in 0..self.bindings.len() {
+        //     render_pass.set_bind_group(i as u32, &self.bindings[i].bindgroup, &[]);
+        // }
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
@@ -143,15 +145,6 @@ pub struct RenderProcessor {
 
     pub bind_group_layouts: PerspectiveShaderLayout,
     pub render_objects: Vec<RenderObject>,
-
-    // pub vertex_buffer: wgpu::Buffer,
-    // pub index_buffer: wgpu::Buffer,
-    // pub num_vertices: u32,
-    // pub num_indices: u32,
-    // pub instances: Vec<ObjectInstance>,
-    // pub instance_buffer: wgpu::Buffer,
-    // pub sprite: SpriteGpuHandle,
-    // pub texture: TexturePack,
 }
 
 impl RenderProcessor {

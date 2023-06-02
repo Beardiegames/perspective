@@ -6,6 +6,8 @@ mod resources;
 mod utility;
 mod bindings;
 
+mod material;
+
 pub use builder::*;
 pub use crate::core::*;
 pub use processors::*;
