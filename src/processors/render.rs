@@ -121,8 +121,8 @@ impl RenderObject {
         render_pass.set_pipeline(pipeline);
         render_pass.set_bind_group(0, &self.texture.bindgroup, &[]);
         render_pass.set_bind_group(1, &camera.binding.bindgroup, &[]);
-        render_pass.set_bind_group(2, &self.sprite.binding.bindgroup, &[]);
-        render_pass.set_bind_group(3, &light.binding.bindgroup, &[]);
+        render_pass.set_bind_group(2, &light.binding.bindgroup, &[]);
+        render_pass.set_bind_group(3, &self.sprite.binding.bindgroup, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
@@ -162,7 +162,7 @@ impl RenderProcessor {
 
         // Setup uniform bindings
         let camera: Camera = Camera::new(device, bind_group_layouts.camera_layout(), &settings.camera_setup);
-        let light: Light = Light::new(device, bind_group_layouts.light_layout());
+        let light: Light = Light::new(device, bind_group_layouts.effects_layout());
         let texture_format = canvas.config.format;
 
         // Build pipeline

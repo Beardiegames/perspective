@@ -10,8 +10,9 @@ impl PerspectiveShaderLayout {
         let layouts = [
             texture_layout(device),
             camera_layout(device),
+            effects_layout(device),
             sprite_animation_layout(device),
-            light_layout(device),
+            
         ];
         PerspectiveShaderLayout { layouts }
     }
@@ -29,9 +30,9 @@ impl PerspectiveShaderLayout {
 
     pub fn camera_layout(&self) -> &BindGroupLayout { &self.layouts[1] }
 
-    pub fn sprite_layout(&self) -> &BindGroupLayout { &self.layouts[2] }
+    pub fn effects_layout(&self) -> &BindGroupLayout { &self.layouts[2] }
 
-    pub fn light_layout(&self) -> &BindGroupLayout { &self.layouts[3] }
+    pub fn sprite_layout(&self) -> &BindGroupLayout { &self.layouts[3] }
 }
 
 
@@ -77,7 +78,7 @@ pub fn camera_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub fn light_layout(device: &Device) -> BindGroupLayout {
+pub fn effects_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[wgpu::BindGroupLayoutEntry {
             binding: 0,

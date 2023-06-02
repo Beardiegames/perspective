@@ -12,7 +12,7 @@ struct Light {
     color: vec3<f32>,
     ambient: vec3<f32>,
 }
-@group(3) @binding(0)
+@group(2) @binding(0)
 var<uniform> light: Light;
 
 
@@ -74,10 +74,10 @@ var t_diffuse: texture_2d<f32>;
 @group(0) @binding(1)
 var s_diffuse: sampler;
 
-@group(2) @binding(0) 
+@group(3) @binding(0) 
 var<storage> sprite_frames: array<vec2<f32>>;
 
-@group(2) @binding(1) 
+@group(3) @binding(1) 
 var<uniform> frames_passed: u32;
 
 struct SpriteAnimationData {
@@ -85,7 +85,7 @@ struct SpriteAnimationData {
     offset: u32,
     head: u32,
 };
-@group(2) @binding(2) 
+@group(3) @binding(2) 
 var<storage, read_write> animations: array<SpriteAnimationData>;
 
 
