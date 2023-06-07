@@ -1,16 +1,14 @@
 pub mod shapes;
 mod core;
-mod builder;
-mod processors;
+mod compute;
+mod renderer;
 mod resources;
 mod utility;
 mod bindings;
 
-mod material;
-
-pub use builder::*;
 pub use crate::core::*;
-pub use processors::*;
+pub use compute::*;
+pub use renderer::*;
 pub use resources::*;
 pub use utility::*;
 pub use wgpu::*;

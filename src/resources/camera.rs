@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use crate::WgpuBinding;
+use crate::WgpuDataBinding;
 use crate::WgpuCore;
 use crate::bindings;
 
@@ -74,7 +74,7 @@ pub struct Camera {
     pub zfar: f32,
 
     pub uniform: CameraUniform,
-    pub binding: WgpuBinding,
+    pub binding: WgpuDataBinding,
 }
 
 impl Camera {

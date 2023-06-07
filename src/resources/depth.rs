@@ -1,11 +1,13 @@
-use std::num::{NonZeroU8};
-use image::{ImageBuffer, Rgba};
+// use std::num::{NonZeroU8};
+// use image::{ImageBuffer, Rgba};
 use wgpu::*;
+
 
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[allow(dead_code)]
 pub enum CompareFunction {
     Undefined = 0,
     Never = 1,

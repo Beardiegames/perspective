@@ -9,7 +9,7 @@ fn main() -> anyhow::Result<()> {
 
 
 pub struct RenderExample {
-    renderer: RenderProcessor,
+    renderer: Renderer,
     
     log_counter: u8,
     frame_tot: f32,
@@ -19,18 +19,13 @@ impl PerspectiveHandler for RenderExample {
 
     fn startup(gx: &mut WgpuCore) -> Self {
 
-        let renderer = gx.setup_render_processor(
-            &RenderSettings {
-                label: "RenderExample", 
-                group_index: 0,// represented within shader as @binding
-                binding_index: 0,// represented within shader as @binding
-    
-                shader_src: include_str!("shaders/basic_shader.wgsl"),
-                vertex_entry_point: "vertex_main",
-                fragment_entry_point: "fragment_main",
+        //let tex_bind = gx.create_texture_binding(include_bytes!("textures/cat-sprite.png"));
 
-                image_data: include_bytes!("textures/cat-sprite.png"),
-                camera_setup: CameraSetup::default(),
+        let renderer = gx.setup_render_processor(
+            CameraSetup::default(),
+            SpritePoolSetup {
+                image: include_bytes!("textures/cat-sprite.png"),
+                max_pool_size: 100_000
             }
         ).unwrap();
 

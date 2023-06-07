@@ -5,44 +5,31 @@ use cgmath::prelude::*;
 use wgpu::util::DeviceExt;
 
 
-pub struct RenderSettings<'a> {
-    pub label: &'a str, 
-    pub group_index: u32,// represented within shader as @binding
-    pub binding_index: u32,// represented within shader as @binding
-
-    pub shader_src: &'a str, // string slice representation of the actual shader code
-    pub vertex_entry_point: &'a str, // name of the vertex entry funcion/methode, called on vertex update
-    pub fragment_entry_point: &'a str, // name of the fragment entry funcion/methode, called on fragment update
-
-    pub image_data: &'a [u8],
-    pub camera_setup: CameraSetup,
-}
-
-pub struct RenderObject {
+pub struct SpriteObject {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub num_vertices: u32,
     pub num_indices: u32,
-
-    pub instances: Vec<ObjectInstance>,
-    pub instance_buffer: wgpu::Buffer,
-
     pub texture: TexturePack,
-    pub sprite: SpriteGpuHandle,
+    pub animation: SpriteGpuHandle,
 }
 
-impl RenderObject {
-
+impl SpriteObject {
     pub fn new(
-        device: &wgpu::Device, 
-        queue: &wgpu::Queue, 
-        texture_layout: &wgpu::BindGroupLayout, 
-        sprite_layout: &wgpu::BindGroupLayout, 
-        image: &[u8]
-    ) -> Self { 
-
+        device: &Device, 
+        queue: &Queue, 
+        bind_group_layouts: &PerspectiveShaderLayout,
+        image_data: &[u8],
+        pool_size: usize
+    ) -> Self 
+    {
         // Setup fragment bindings
-        let texture = TexturePack::new(device, queue, texture_layout, image);
+        let texture = TexturePack::new(
+            device, 
+            queue, 
+            bind_group_layouts.texture_layout(), 
+            image_data,
+        );
         let uv_scale = [0.5, 0.5];
 
         // Setup vertex bindings
@@ -51,6 +38,54 @@ impl RenderObject {
 
         let num_vertices = shape.vertices.len() as u32;
         let num_indices = shape.indices.len() as u32;
+
+        // Setup sprite animation bindings
+        let animation = SpriteGpuHandle::new(
+            device, 
+            bind_group_layouts.sprite_layout(),
+            vec![
+                [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
+            ],
+            pool_size //instances.len()
+        );
+
+        SpriteObject {
+            vertex_buffer,
+            index_buffer,
+            num_vertices,
+            num_indices,
+            texture,
+            animation,
+        }
+    }
+}
+
+pub struct SpritePoolSetup {
+    pub image: &'static [u8],
+    pub max_pool_size: usize,
+}
+
+pub struct SpritePool {
+    pub sprite_obj: SpriteObject,
+    pub instances: Vec<ObjectInstance>,
+    pub instance_buffer: wgpu::Buffer,
+}
+
+impl SpritePool {
+
+    pub fn new(
+        device: &wgpu::Device, 
+        queue: &wgpu::Queue, 
+        bind_group_layouts: &PerspectiveShaderLayout,
+        settings: SpritePoolSetup,
+    ) -> Self { 
+
+        let sprite_obj = SpriteObject::new(
+            device, queue, 
+            bind_group_layouts,
+            settings.image, 
+            settings.max_pool_size
+        );
 
         let instances = (0..NUM_INSTANCES_PER_ROW * NUM_INSTANCES_PER_ROW)
             .map(|instance_idx| {
@@ -66,7 +101,7 @@ impl RenderObject {
             .collect::<Vec<_>>();           
 
         let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
-        //let instance_data = Vec::<ObjectInstance>::new();
+
         let instance_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
@@ -75,36 +110,16 @@ impl RenderObject {
             }
         );
 
-        // Setup sprite animation bindings
-        let sprite = SpriteGpuHandle::new(
-            device, 
-            sprite_layout,
-            vec![
-                [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
-            ],
-            instances.len()
-        );
-
-        RenderObject {
-            vertex_buffer,
-            index_buffer,
-            num_vertices,
-            num_indices,
-        
+        SpritePool {
+            sprite_obj,
             instances,
             instance_buffer,
-        
-            texture,
-            sprite,
         }
         
     }
 
-    pub fn pre_render_pass(
-        &mut self, 
-        ctx: &mut RenderContext, 
-    ) {
-        self.sprite.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
+    pub fn pre_render_pass(&mut self, ctx: &mut RenderContext) {
+        self.sprite_obj.animation.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
     }
 
     pub fn exec_render_pass(
@@ -114,28 +129,25 @@ impl RenderObject {
         camera: &Camera,
         light: &Light,
     ) {
-        
         let mut render_pass = ctx.begin_render_pass();
 
         render_pass.set_pipeline(pipeline);
-        render_pass.set_bind_group(0, &self.texture.bindgroup, &[]);
+
+        render_pass.set_bind_group(0, &self.sprite_obj.texture.bindgroup, &[]);
         render_pass.set_bind_group(1, &camera.binding.bindgroup, &[]);
         render_pass.set_bind_group(2, &light.binding.bindgroup, &[]);
-        render_pass.set_bind_group(3, &self.sprite.binding.bindgroup, &[]);
-        // for i in 0..self.bindings.len() {
-        //     render_pass.set_bind_group(i as u32, &self.bindings[i].bindgroup, &[]);
-        // }
+        render_pass.set_bind_group(3, &self.sprite_obj.animation.binding.bindgroup, &[]);
 
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_vertex_buffer(0, self.sprite_obj.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
 
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        render_pass.set_index_buffer(self.sprite_obj.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
+        render_pass.draw_indexed(0..self.sprite_obj.num_indices, 0, 0..self.instances.len() as _);
     }
 }
 
-pub struct RenderProcessor {
+pub struct Renderer {
     pub shader: wgpu::ShaderModule,
     pub pipeline: wgpu::RenderPipeline,
     pub layout: wgpu::PipelineLayout,
@@ -144,24 +156,24 @@ pub struct RenderProcessor {
     pub light: Light,
 
     pub bind_group_layouts: PerspectiveShaderLayout,
-    pub render_objects: Vec<RenderObject>,
+    pub sprite_pool: SpritePool,
 }
 
-impl RenderProcessor {
+impl Renderer {
 
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, settings: &RenderSettings) -> RenderProcessor {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> Renderer {
 
         let bind_group_layouts = PerspectiveShaderLayout::new(device);
 
         // Setup uniform bindings
-        let camera: Camera = Camera::new(device, bind_group_layouts.camera_layout(), &settings.camera_setup);
+        let camera: Camera = Camera::new(device, bind_group_layouts.camera_layout(), &camera_setup);
         let light: Light = Light::new(device, bind_group_layouts.effects_layout());
         let texture_format = canvas.config.format;
 
         // Build pipeline
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("Shader Module")),
-            source: wgpu::ShaderSource::Wgsl(settings.shader_src.into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/basic_shader.wgsl").into()),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -176,12 +188,12 @@ impl RenderProcessor {
             layout: Some(&layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: settings.vertex_entry_point,
+                entry_point: "vert",
                 buffers: &[Vertex::desc(), InstanceRaw::layout()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: settings.fragment_entry_point,
+                entry_point: "frag",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: texture_format,
                     blend: Some(wgpu::BlendState::ALPHA_BLENDING),
@@ -212,19 +224,14 @@ impl RenderProcessor {
             multiview: None,
         });
 
-        let mut render_objects = Vec::new();
-
-        render_objects.push(
-            RenderObject::new(
-                device, 
-                queue, 
-                bind_group_layouts.texture_layout(),
-                bind_group_layouts.sprite_layout(), 
-                settings.image_data
-            )
+        let sprite_pool = SpritePool::new(
+            device, 
+            queue,
+            &bind_group_layouts,
+            sprite_setup,
         );
 
-        RenderProcessor { 
+        Renderer { 
             shader, 
             pipeline, 
             layout,
@@ -233,50 +240,17 @@ impl RenderProcessor {
             light,
 
             bind_group_layouts,
-            render_objects,
+            sprite_pool,
         }
     }
-
-    pub fn create_render_object(&mut self, gx: &WgpuCore, image_data: &[u8]) {
-        self.render_objects.push(
-            RenderObject::new(
-                &gx.device, 
-                &gx.queue, 
-                self.bind_group_layouts.texture_layout(),
-                self.bind_group_layouts.sprite_layout(), 
-                image_data
-            )
-        )
-    }
-
-    // pub fn instantiate_object(&mut self, gx: &WgpuCore, image_data: &'static [u8]) {
-    //     self.render_objects.push(
-    //         RenderObject::new(
-    //             &gx.device, 
-    //             &gx.queue, 
-    //             self.bind_group_layouts.texture_layout(),
-    //             self.bind_group_layouts.sprite_layout(), 
-    //             image_data
-    //         )
-    //     )
-    // }
 
     pub fn execute_render_pipeline(&mut self, mut ctx: RenderContext) {
         self.camera.buffer_update(&ctx.gx);
         self.light.buffer_update(&ctx.gx);
 
-        if self.render_objects.len() > 0 {
+        self.sprite_pool.pre_render_pass(&mut ctx);
+        self.sprite_pool.exec_render_pass(&mut ctx, &self.pipeline, &self.camera, &self.light);
 
-            // pre render pass -- update buffer data
-            for pr in &mut self.render_objects {
-                pr.pre_render_pass(&mut ctx);
-            }
-
-            // execute render passes
-            for er in &mut self.render_objects {
-                er.exec_render_pass(&mut ctx, &self.pipeline, &self.camera, &self.light);
-            }
-        }
         ctx.gx.queue.submit(std::iter::once(ctx.encoder.finish()));
         ctx.output.present(); 
     }

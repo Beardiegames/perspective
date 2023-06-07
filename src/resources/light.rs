@@ -1,4 +1,4 @@
-use crate::{WgpuCore, WgpuBinding, create_effects_binding};
+use crate::{WgpuCore, WgpuDataBinding, create_effects_binding};
 
 
 #[repr(C)]
@@ -16,7 +16,7 @@ pub struct LightUniform {
 
 pub struct Light {
     pub uniform: LightUniform,
-    pub binding: WgpuBinding,
+    pub binding: WgpuDataBinding,
 }
 
 impl Light {

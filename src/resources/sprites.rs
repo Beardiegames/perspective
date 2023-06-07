@@ -1,6 +1,6 @@
 use std::{f32::consts::PI};
 use bytemuck::{Pod, Zeroable};
-use crate::{WgpuCore, create_sprite_animation_binding, WgpuBinding};
+use crate::{WgpuCore, create_sprite_animation_binding, WgpuDataBinding};
 
 
 
@@ -20,7 +20,7 @@ pub struct SpriteGpuHandle {
     _animations: Vec::<SpriteAnimationData>,
     frames_passed: u32, 
 
-    pub binding: WgpuBinding,
+    pub binding: WgpuDataBinding,
 }
 
 impl SpriteGpuHandle {

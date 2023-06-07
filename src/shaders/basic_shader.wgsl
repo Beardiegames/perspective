@@ -41,7 +41,7 @@ struct InstanceInput {
 };
 
 @vertex
-fn vertex_main(
+fn vert(
     model: VertexInput,
     instance: InstanceInput,
 ) 
@@ -90,7 +90,7 @@ var<storage, read_write> animations: array<SpriteAnimationData>;
 
 
 @fragment
-fn fragment_main(
+fn frag(
     in: VertexOutput
 ) 
     -> @location(0) vec4<f32> 
