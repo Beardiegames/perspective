@@ -10,7 +10,8 @@ pub struct SpriteObject {
     pub index_buffer: wgpu::Buffer,
     pub num_vertices: u32,
     pub num_indices: u32,
-    pub texture: TexturePack,
+    //pub texture: TexturePack,
+    pub texture_id: TextureID,
     pub animation: SpriteGpuHandle,
 }
 
@@ -19,21 +20,25 @@ impl SpriteObject {
         device: &Device, 
         queue: &Queue, 
         bind_group_layouts: &PerspectiveShaderLayout,
-        image_data: &[u8],
-        pool_size: usize
+        //image_data: &[u8],
+        // texture_id: TextureID,
+        // uv_scale: (f32, f32),
+        // 
+        settings: SpritePoolSetup,
+        //pool_size: usize
     ) -> Self 
     {
         // Setup fragment bindings
-        let texture = TexturePack::new(
-            device, 
-            queue, 
-            bind_group_layouts.texture_layout(), 
-            image_data,
-        );
-        let uv_scale = [0.5, 0.5];
+        // let texture = TexturePack::new(
+        //     device, 
+        //     queue, 
+        //     bind_group_layouts.texture_layout(), 
+        //     image_data,
+        // );
+        // let uv_scale = [0.5, 0.5];
 
         // Setup vertex bindings
-        let shape = crate::shapes::create_square(uv_scale);
+        let shape = crate::shapes::create_square([settings.tile_size.0, settings.tile_size.1]);
         let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
 
         let num_vertices = shape.vertices.len() as u32;
@@ -46,7 +51,7 @@ impl SpriteObject {
             vec![
                 [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
             ],
-            pool_size //instances.len()
+            settings.max_pool_size //instances.len()
         );
 
         SpriteObject {
@@ -54,14 +59,20 @@ impl SpriteObject {
             index_buffer,
             num_vertices,
             num_indices,
-            texture,
+            //texture,
+            texture_id: settings.texture_id,
             animation,
         }
     }
 }
 
+// #[derive(Default)]
 pub struct SpritePoolSetup {
-    pub image: &'static [u8],
+    pub custom_shader: Option<&'static str>,
+    pub texture_id: TextureID,
+    // pub image_data: &'static [u8],
+    pub image_size: (u32, u32),
+    pub tile_size: (f32, f32),
     pub max_pool_size: usize,
 }
 
@@ -83,8 +94,7 @@ impl SpritePool {
         let sprite_obj = SpriteObject::new(
             device, queue, 
             bind_group_layouts,
-            settings.image, 
-            settings.max_pool_size
+            settings,
         );
 
         let instances = (0..NUM_INSTANCES_PER_ROW * NUM_INSTANCES_PER_ROW)
@@ -126,6 +136,7 @@ impl SpritePool {
         &self, 
         ctx: &mut RenderContext, 
         pipeline: &RenderPipeline,
+        textures: &TexturePack,
         camera: &Camera,
         light: &Light,
     ) {
@@ -133,7 +144,9 @@ impl SpritePool {
 
         render_pass.set_pipeline(pipeline);
 
-        render_pass.set_bind_group(0, &self.sprite_obj.texture.bindgroup, &[]);
+        if let Some(tex) = textures.get(&self.sprite_obj.texture_id) {
+            render_pass.set_bind_group(0, &tex.bindgroup, &[]);
+        }
         render_pass.set_bind_group(1, &camera.binding.bindgroup, &[]);
         render_pass.set_bind_group(2, &light.binding.bindgroup, &[]);
         render_pass.set_bind_group(3, &self.sprite_obj.animation.binding.bindgroup, &[]);
@@ -156,12 +169,13 @@ pub struct Renderer {
     pub light: Light,
 
     pub bind_group_layouts: PerspectiveShaderLayout,
+    pub textures: TexturePack,
     pub sprite_pool: SpritePool,
 }
 
 impl Renderer {
 
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> Renderer {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, canvas: &Canvas, textures: TexturePack, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> Renderer {
 
         let bind_group_layouts = PerspectiveShaderLayout::new(device);
 
@@ -173,7 +187,12 @@ impl Renderer {
         // Build pipeline
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(&format!("Shader Module")),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/basic_shader.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(
+                match sprite_setup.custom_shader {
+                    Some(s) => s.into(),
+                    None => include_str!("shaders/sprite_shader.wgsl").into()
+                }
+            ),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -240,6 +259,7 @@ impl Renderer {
             light,
 
             bind_group_layouts,
+            textures,
             sprite_pool,
         }
     }
@@ -249,7 +269,7 @@ impl Renderer {
         self.light.buffer_update(&ctx.gx);
 
         self.sprite_pool.pre_render_pass(&mut ctx);
-        self.sprite_pool.exec_render_pass(&mut ctx, &self.pipeline, &self.camera, &self.light);
+        self.sprite_pool.exec_render_pass(&mut ctx, &self.pipeline,&self.textures, &self.camera, &self.light);
 
         ctx.gx.queue.submit(std::iter::once(ctx.encoder.finish()));
         ctx.output.present(); 

@@ -21,11 +21,23 @@ impl PerspectiveHandler for RenderExample {
 
         //let tex_bind = gx.create_texture_binding(include_bytes!("textures/cat-sprite.png"));
 
+        let mut textures = TexturePack::new();
+        let texture_id = textures.load(
+            &gx.device, 
+            &gx.queue, 
+            include_bytes!("textures/cat-sprite.png"), 
+            (0.5, 0.5)
+        );
+
         let renderer = gx.setup_render_processor(
+            textures,
             CameraSetup::default(),
             SpritePoolSetup {
-                image: include_bytes!("textures/cat-sprite.png"),
-                max_pool_size: 100_000
+                custom_shader: None,
+                max_pool_size: 100_000,
+                texture_id,
+                image_size: (0, 0),
+                tile_size: (0.5, 0.5)
             }
         ).unwrap();
 

@@ -98,17 +98,25 @@ impl WgpuCore {
         ComputeProcessor::new(self, settings)
     }
 
-    pub fn setup_render_processor(&mut self, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> anyhow::Result<Renderer> {
+    pub fn setup_render_processor(&mut self, textures: TexturePack, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> anyhow::Result<Renderer> {
         self.canvas.as_ref()
-            .map(|c| Renderer::new(&self.device, &self.queue, &c, camera_setup, sprite_setup))
+            .map(|c| Renderer::new(
+                    &self.device, 
+                    &self.queue, 
+                    &c, 
+                    textures, 
+                    camera_setup, 
+                    sprite_setup
+                )
+            )
             .ok_or_else(|| std::fmt::Error.into()) 
     }
 
     // --new
 
-    pub fn create_texture_binding(&self, image_data: &[u8]) -> WgpuTextureBinding {
-        WgpuTextureBinding::new(&self.device, &self.queue, image_data)
-    }
+    // pub fn create_texture_binding(&self, image_data: &[u8]) -> WgpuTextureBinding {
+    //     WgpuTextureBinding::new(&self.device, &self.queue, image_data)
+    // }
 }
 
 
