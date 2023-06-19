@@ -139,6 +139,7 @@ impl WgpuTextureBinding {
     }
 }
 
+#[derive(Clone)]
 pub enum TextureID {
     Index(usize),
     Null,

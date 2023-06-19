@@ -4,7 +4,7 @@ use perspective::*;
 fn main() -> anyhow::Result<()> {
     let window_size = PhysicalSize::new(1600, 1200);
     
-    Perspective::new(window_size).run::<RenderExample>()
+    Perspective::new(window_size).run_winit::<RenderExample>()
 }
 
 
@@ -30,16 +30,15 @@ impl PerspectiveHandler for RenderExample {
         );
 
         let renderer = gx.setup_render_processor(
+            &CameraSetup::default(),
             textures,
-            CameraSetup::default(),
-            SpritePoolSetup {
-                custom_shader: None,
-                max_pool_size: 100_000,
+            &SpritePoolSetup {
                 texture_id,
                 image_size: (0, 0),
-                tile_size: (0.5, 0.5)
+                tile_size: (0.5, 0.5),
+                ..Default::default()
             }
-        ).unwrap();
+        );
 
         RenderExample { renderer, log_counter: 0, frame_tot: 0.0 }
     }

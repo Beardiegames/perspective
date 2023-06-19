@@ -25,6 +25,7 @@ pub use winit::{
 pub struct Perspective {
     pub size: PhysicalSize<u32>,
     pub timer: RunTime,
+    pub stop_running: bool,
 }
 
 impl Perspective {
@@ -34,16 +35,40 @@ impl Perspective {
         Self {
             size,
             timer: RunTime::new(),
+            stop_running: false,
         }
     }
 
     /// return a tuple containing the (width, height) of the window
     pub fn window_size(&self) -> (u32, u32) { (self.size.width, self.size.height) }
 
+
+    /// run the application in console only, don't draw a window
+    pub fn run_cli<App>(mut self) -> anyhow::Result<()> 
+        where App: 'static + PerspectiveHandler
+    {
+        let mut wgpu_core = core::WgpuCore::new::<Window>(None)?;
+        let mut app = App::startup(&mut wgpu_core);
+
+        while !self.stop_running {
+            app.update(&mut wgpu_core, &mut self);
+
+            let encoder = wgpu_core.device.create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+
+            match self.render_pipe(&mut app, &mut wgpu_core, encoder) {
+                Ok(_) => {},
+               _ => eprintln!("Unexpected render error"),
+            }
+        }
+        Ok(())
+    }
+
     /// run the application by:
     /// setting up a new window, hooking up a gpu device 
     /// and starting a event based game loop
-    pub fn run<App>(mut self) -> anyhow::Result<()> 
+    pub fn run_winit<App>(mut self) -> anyhow::Result<()> 
         where App: 'static + PerspectiveHandler
     {
         let event_loop = EventLoop::new();
@@ -56,6 +81,7 @@ impl Perspective {
         };
 
         let mut wgpu_core = core::WgpuCore::new(Some(&window_settings))?;
+
         println!("-- perspective run:\n{:?}", wgpu_core.adapter.get_info());
 
         let mut app = App::startup(&mut wgpu_core);
@@ -169,24 +195,35 @@ impl Perspective {
     fn render_pipe<App>(&mut self, app: &mut App, wgpu_core: &mut WgpuCore, encoder: CommandEncoder) -> Result<(), PerspectiveError>
         where App: PerspectiveHandler
     {
-        if let Some(c) = &wgpu_core.canvas {
 
-            let output = c.surface
-                .get_current_texture()
-                .map_err(|e| PerspectiveError::SurfaceError(e))?;
+        return Ok(app.render_pipeline(
+            RenderContext{ 
+                px: &self, 
+                gx: &wgpu_core,
+                encoder, 
+                draw: wgpu_core.canvas.as_ref().map(|c| {
+                    let output = c.surface
+                        .get_current_texture()
+                        .unwrap();
+                        //.map_err(|e| PerspectiveError::SurfaceError(e))?;
 
-            let view = output.texture.create_view(&TextureViewDescriptor::default());
-            let depth_map = &c.depth_map.view; 
+                    let view = output.texture.create_view(&TextureViewDescriptor::default());
+                    let depth_map = &c.depth_map.view;
+                    
+                    DrawContext { view, depth_map, output }
+                })
+            }
+        ));
+
+        // if let Some(c) = &wgpu_core.canvas {
+
+             
             
-            return Ok(app.render_pipeline(
-                RenderContext{ 
-                    px: &self, 
-                    gx: &wgpu_core,
-                    encoder, view, depth_map, output, 
-                }
-            )); 
-        }
-        Err(PerspectiveError::NoCanvas)
+             
+        // } else {
+
+        // }
+        
     }
 
 

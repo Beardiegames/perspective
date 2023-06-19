@@ -62,7 +62,7 @@ impl WgpuCore {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    features: wgpu::Features::default(),
                     limits: wgpu::Limits::default(),
                     label: None,
                 },
@@ -98,20 +98,15 @@ impl WgpuCore {
         ComputeProcessor::new(self, settings)
     }
 
-    pub fn setup_render_processor(&mut self, textures: TexturePack, camera_setup: CameraSetup, sprite_setup: SpritePoolSetup) -> anyhow::Result<Renderer> {
-        self.canvas.as_ref()
-            .map(|c| Renderer::new(
-                    &self.device, 
-                    &self.queue, 
-                    &c, 
-                    textures, 
-                    camera_setup, 
-                    sprite_setup
-                )
-            )
-            .ok_or_else(|| std::fmt::Error.into()) 
+    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack, sprite_setup: &SpritePoolSetup) -> Renderer {
+        Renderer::new(
+            &self.device, 
+            //&self.queue, 
+            camera_setup,
+            textures,
+            sprite_setup
+        )
     }
-
     // --new
 
     // pub fn create_texture_binding(&self, image_data: &[u8]) -> WgpuTextureBinding {
