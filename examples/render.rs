@@ -21,25 +21,45 @@ impl PerspectiveHandler for RenderExample {
 
         //let tex_bind = gx.create_texture_binding(include_bytes!("textures/cat-sprite.png"));
 
-        let mut textures = TexturePack::new();
-        let texture_id = textures.load(
+        let mut textures = TexturePack::default();
+        let cat_id = textures.load(
             &gx.device, 
             &gx.queue, 
             include_bytes!("textures/cat-sprite.png"), 
             (0.5, 0.5)
         );
 
+        let mageman_id = textures.load(
+            &gx.device, 
+            &gx.queue, 
+            include_bytes!("textures/megaman_running.png"), 
+            (0.2, 0.5)
+        );
+
         let renderer = gx.setup_render_processor(
             &CameraSetup::default(),
             textures,
-            &SpritePoolSetup {
-                texture_id,
-                image_size: (0, 0),
-                tile_size: (0.5, 0.5),
-                ..Default::default()
-            }
+            &[
+                SpritePoolSetup {
+                    texture_id: cat_id,
+                    image_size: (0, 0),
+                    tile_size: (0.5, 0.5),
+                    temp_offset: -1.0,
+                    ..Default::default()
+                },
+                SpritePoolSetup {
+                    texture_id: mageman_id.clone(),
+                    image_size: (0, 0),
+                    tile_size: (0.2, 0.5),
+                    animation_frames: vec![
+                        [0.0, 0.0], [0.2, 0.0], [0.4, 0.0], [0.6, 0.0], [0.8, 0.0],
+                        [0.0, 0.5], [0.2, 0.5], [0.4, 0.5], [0.6, 0.5], [0.8, 0.5],
+                    ],
+                    temp_offset: 0.0,
+                    ..Default::default()
+                },
+            ]
         );
-
         RenderExample { renderer, log_counter: 0, frame_tot: 0.0 }
     }
 
@@ -60,7 +80,7 @@ impl PerspectiveHandler for RenderExample {
         }
     }
 
-    fn render_pipeline(&mut self, ctx: RenderContext) { 
+    fn draw(&mut self, ctx: RenderContext) { 
         self.renderer.execute_render_pipeline(ctx);
     }
 }

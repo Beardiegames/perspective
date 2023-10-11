@@ -10,7 +10,6 @@ pub struct SpriteObject {
     pub index_buffer: wgpu::Buffer,
     pub num_vertices: u32,
     pub num_indices: u32,
-    //pub texture: TexturePack,
     pub texture_id: TextureID,
     pub animation: SpriteGpuHandle,
 }
@@ -18,25 +17,10 @@ pub struct SpriteObject {
 impl SpriteObject {
     pub fn new(
         device: &Device, 
-        //queue: &Queue, 
         bind_group_layouts: &PerspectiveShaderLayout,
-        //image_data: &[u8],
-        // texture_id: TextureID,
-        // uv_scale: (f32, f32),
-        // 
         settings: &SpritePoolSetup,
-        //pool_size: usize
     ) -> Self 
     {
-        // Setup fragment bindings
-        // let texture = TexturePack::new(
-        //     device, 
-        //     queue, 
-        //     bind_group_layouts.texture_layout(), 
-        //     image_data,
-        // );
-        // let uv_scale = [0.5, 0.5];
-
         // Setup vertex bindings
         let shape = crate::shapes::create_square([settings.tile_size.0, settings.tile_size.1]);
         let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
@@ -48,9 +32,7 @@ impl SpriteObject {
         let animation = SpriteGpuHandle::new(
             device, 
             bind_group_layouts.sprite_layout(),
-            vec![
-                [0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]
-            ],
+            settings.animation_frames.clone(),
             settings.max_pool_size //instances.len()
         );
 
@@ -59,7 +41,6 @@ impl SpriteObject {
             index_buffer,
             num_vertices,
             num_indices,
-            //texture,
             texture_id: settings.texture_id.clone(),
             animation,
         }
@@ -67,23 +48,24 @@ impl SpriteObject {
 }
 
 #[derive(Clone)]
-pub struct SpritePoolSetup<'a> {
-    pub shader_src: wgpu::ShaderSource<'a>,
+pub struct SpritePoolSetup {
     pub texture_id: TextureID,
-    // pub image_data: &'static [u8],
     pub image_size: (u32, u32),
     pub tile_size: (f32, f32),
+    pub animation_frames: Vec<[f32; 2]>,
     pub max_pool_size: usize,
+    pub temp_offset: f32,
 }
 
-impl<'a> Default for SpritePoolSetup<'a> {
+impl Default for SpritePoolSetup {
     fn default() -> Self {
         SpritePoolSetup {
-            shader_src: wgpu::ShaderSource::Wgsl(include_str!("shaders/sprite_shader.wgsl").into()),
             texture_id: TextureID::Index(0),
             image_size: (1024, 1024),
             tile_size: (0.0625, 0.0625),
+            animation_frames: vec![[0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]],
             max_pool_size: 100_000,
+            temp_offset: 0.0,
         }
     }
 }
@@ -98,7 +80,6 @@ impl SpritePool {
 
     pub fn new(
         device: &wgpu::Device, 
-        //queue: &wgpu::Queue, 
         bind_group_layouts: &PerspectiveShaderLayout,
         settings: &SpritePoolSetup,
     ) -> Self { 
@@ -115,7 +96,7 @@ impl SpritePool {
                 let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
                 let z = ((instance_idx as f32).cos() / 2.0) + (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
 
-                let position = cgmath::Vector3 { x: x, y: 0.0, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
+                let position = cgmath::Vector3 { x, y: settings.temp_offset, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
                 let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
                 
                 ObjectInstance { instance_idx, position, rotation, }
@@ -139,38 +120,6 @@ impl SpritePool {
         }
         
     }
-
-    pub fn pre_render_pass(&mut self, ctx: &mut RenderContext) {
-        self.sprite_obj.animation.buffer_update(&ctx.gx, ctx.px.timer.sprite_frames());
-    }
-
-    pub fn exec_render_pass(
-        &self, 
-        ctx: &mut RenderContext, 
-        pipeline: &RenderPipeline,
-        textures: &TexturePack,
-        camera: &Camera,
-        light: &Light,
-    ) {
-        if let Some(mut render_pass) = ctx.begin_render_pass() {
-
-            render_pass.set_pipeline(pipeline);
-
-            if let Some(tex) = textures.get(&self.sprite_obj.texture_id) {
-                render_pass.set_bind_group(0, &tex.bindgroup, &[]);
-            }
-            render_pass.set_bind_group(1, &camera.binding.bindgroup, &[]);
-            render_pass.set_bind_group(2, &light.binding.bindgroup, &[]);
-            render_pass.set_bind_group(3, &self.sprite_obj.animation.binding.bindgroup, &[]);
-
-            render_pass.set_vertex_buffer(0, self.sprite_obj.vertex_buffer.slice(..));
-            render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
-
-            render_pass.set_index_buffer(self.sprite_obj.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-            render_pass.draw_indexed(0..self.sprite_obj.num_indices, 0, 0..self.instances.len() as _);
-        }
-    }
 }
 
 pub struct Renderer {
@@ -183,38 +132,41 @@ pub struct Renderer {
 
     pub bindgroup_layouts: PerspectiveShaderLayout,
     pub textures: TexturePack,
-    pub sprite_pool: SpritePool,
+    pub sprites: Vec<SpritePool>,
 }
 
 impl Renderer {
 
     pub fn new(
         device: &Device, 
-        //queue: &Queue, 
         camera_setup: &CameraSetup, 
         textures: TexturePack,
-        sprite_setup: &SpritePoolSetup
+        sprite_setup: &[SpritePoolSetup]
     ) -> Self {
 
         let bindgroup_layouts = PerspectiveShaderLayout::new(device);
 
         let camera = Camera::new(device, bindgroup_layouts.camera_layout(), camera_setup);
         let light = Light::new(device, bindgroup_layouts.effects_layout());
-        let sprite_pool = SpritePool::new(device, &bindgroup_layouts, sprite_setup);
+        
+        let mut sprites = Vec::new();
+        for s in sprite_setup {
+            sprites.push(SpritePool::new(device, &bindgroup_layouts, s));
+        }
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(&format!("Shader Module")),
-            source: sprite_setup.shader_src.clone(),
+            label: Some("Shader Module"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/sprite_shader.wgsl").into()),
         });
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some(&format!("Pipeline Layout")),
+            label: Some("Pipeline Layout"),
             bind_group_layouts: &bindgroup_layouts.as_slice(),
             push_constant_ranges: &[],
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some(&format!("Render Pipeline")),
+            label: Some("Render Pipeline"),
     
             layout: Some(&layout),
             vertex: wgpu::VertexState {
@@ -263,16 +215,38 @@ impl Renderer {
             light,
             bindgroup_layouts,
             textures,
-            sprite_pool,
+            sprites,
         }
     }
 
     pub fn execute_render_pipeline(&mut self, mut ctx: RenderContext) {
-        self.camera.buffer_update(&ctx.gx);
-        self.light.buffer_update(&ctx.gx);
+        self.camera.buffer_update(ctx.gx);
+        self.light.buffer_update(ctx.gx);
 
-        self.sprite_pool.pre_render_pass(&mut ctx);
-        self.sprite_pool.exec_render_pass(&mut ctx, &self.pipeline,&self.textures, &self.camera, &self.light);
+        for spritepool in &mut self.sprites {
+            spritepool.sprite_obj.animation.buffer_update(ctx.gx, ctx.px.timer.sprite_frames());
+        }
+
+        if let Some(mut render_pass) = ctx.begin_render_pass() {
+
+            render_pass.set_pipeline(&self.pipeline);
+
+            render_pass.set_bind_group(1, &self.camera.binding.bindgroup, &[]);
+            render_pass.set_bind_group(2, &self.light.binding.bindgroup, &[]);
+
+            for spritepool in &mut self.sprites {
+                if let Some(tex) =  &self.textures.get(&spritepool.sprite_obj.texture_id) {
+                    render_pass.set_bind_group(0, &tex.bindgroup, &[]);
+                }
+                render_pass.set_bind_group(3, &spritepool.sprite_obj.animation.binding.bindgroup, &[]);
+
+                render_pass.set_vertex_buffer(0, spritepool.sprite_obj.vertex_buffer.slice(..));
+                render_pass.set_vertex_buffer(1, spritepool.instance_buffer.slice(..));
+
+                render_pass.set_index_buffer(spritepool.sprite_obj.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.draw_indexed(0..spritepool.sprite_obj.num_indices, 0, 0..spritepool.instances.len() as _);
+            }
+        } 
 
         ctx.gx.queue.submit(std::iter::once(ctx.encoder.finish()));
 

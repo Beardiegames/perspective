@@ -6,11 +6,8 @@ use wgpu::{
     Dx12Compiler, InstanceDescriptor,
 };
 
-pub use crate::compute::*;
 pub use crate::renderer::*;
 pub use crate::resources::*;
-
-
 
 
 pub struct WindowSettings<'a, W>
@@ -21,11 +18,13 @@ pub struct WindowSettings<'a, W>
     pub height: u32,
 }
 
+
 pub struct Canvas {
     pub surface: wgpu::Surface,
     pub config: wgpu::SurfaceConfiguration,
     pub depth_map: DepthTexture,
 }
+
 
 pub struct WgpuCore {
     pub instance: wgpu::Instance,
@@ -34,6 +33,7 @@ pub struct WgpuCore {
     pub queue: wgpu::Queue,
     pub canvas: Option<Canvas>,
 }
+
 
 impl WgpuCore {
 
@@ -92,13 +92,7 @@ impl WgpuCore {
         }
     }
 
-    pub fn setup_compute_processor<T>(&mut self, settings: &ComputeSettings<T>) -> ComputeProcessor
-        where T: bytemuck::Pod + Clone
-    {
-        ComputeProcessor::new(self, settings)
-    }
-
-    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack, sprite_setup: &SpritePoolSetup) -> Renderer {
+    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack, sprite_setup: &[SpritePoolSetup]) -> Renderer {
         Renderer::new(
             &self.device, 
             //&self.queue, 
@@ -107,11 +101,6 @@ impl WgpuCore {
             sprite_setup
         )
     }
-    // --new
-
-    // pub fn create_texture_binding(&self, image_data: &[u8]) -> WgpuTextureBinding {
-    //     WgpuTextureBinding::new(&self.device, &self.queue, image_data)
-    // }
 }
 
 
@@ -127,9 +116,7 @@ fn create_canvas(surface: Option<Surface>, device: &Device, adapter: &Adapter, s
         let surface_caps = srf.get_capabilities(adapter);
 
         let surface_format = surface_caps.formats.iter()
-            .copied()
-            .filter(|f| f.describe().srgb)
-            .next()
+            .copied().find(|f| f.describe().srgb)
             .unwrap_or(surface_caps.formats[0]);
 
         let config = wgpu::SurfaceConfiguration {
@@ -141,9 +128,9 @@ fn create_canvas(surface: Option<Surface>, device: &Device, adapter: &Adapter, s
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
         };
-        srf.configure(&device, &config);
+        srf.configure(device, &config);
 
-        let depth_map = DepthTexture::new(&device, &config);
+        let depth_map = DepthTexture::new(device, &config);
 
         Canvas {  
             surface: srf,

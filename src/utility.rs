@@ -21,7 +21,7 @@ pub trait PerspectiveHandler {
     fn resize(&mut self, width: u32, height: u32) {}
 
     #[allow(unused)]
-    fn render_pipeline(&mut self, mut ctx: RenderContext) {}
+    fn draw(&mut self, mut ctx: RenderContext) {}
     
 }
 

@@ -1,18 +1,17 @@
 pub mod shapes;
 mod core;
-mod compute;
 mod renderer;
 mod resources;
 mod utility;
 mod bindings;
 
 pub use crate::core::*;
-pub use compute::*;
 pub use renderer::*;
 pub use resources::*;
 pub use utility::*;
 pub use wgpu::*;
 pub use bindings::*;
+
 
 pub use winit::{
     event::*,
@@ -196,34 +195,26 @@ impl Perspective {
         where App: PerspectiveHandler
     {
 
-        return Ok(app.render_pipeline(
-            RenderContext{ 
-                px: &self, 
-                gx: &wgpu_core,
-                encoder, 
-                draw: wgpu_core.canvas.as_ref().map(|c| {
-                    let output = c.surface
-                        .get_current_texture()
-                        .unwrap();
-                        //.map_err(|e| PerspectiveError::SurfaceError(e))?;
+        return {
+            app.draw(
+                RenderContext{ 
+                    px: self, 
+                    gx: wgpu_core,
+                    encoder, 
+                    draw: wgpu_core.canvas.as_ref().map(|c| {
+                        let output = c.surface
+                            .get_current_texture()
+                            .unwrap();
 
-                    let view = output.texture.create_view(&TextureViewDescriptor::default());
-                    let depth_map = &c.depth_map.view;
-                    
-                    DrawContext { view, depth_map, output }
-                })
-            }
-        ));
-
-        // if let Some(c) = &wgpu_core.canvas {
-
-             
-            
-             
-        // } else {
-
-        // }
-        
+                        let view = output.texture.create_view(&TextureViewDescriptor::default());
+                        let depth_map = &c.depth_map.view;
+                        
+                        DrawContext { view, depth_map, output }
+                    })
+                }
+            );
+            Ok(())
+        };
     }
 
 
@@ -234,5 +225,3 @@ impl Perspective {
         self.timer.time_step();
     }
 }
-
-
