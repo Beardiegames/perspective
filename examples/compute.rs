@@ -12,10 +12,7 @@ impl PerspectiveHandler for ComputeExample {
 
         let compute = gfx.setup_compute_processor(
             &ComputeSettings {
-                label: "ComputeExample", 
-                group_index: 0,// represented within shader as @binding
-                binding_index: 0,// represented within shader as @binding
-    
+                label: "ComputeExample",
                 data_set: vec![1; 10000],
                 shader_src: include_str!("shaders/compute_shader.wgsl"),
                 entry_point: "main",
@@ -51,8 +48,7 @@ impl PerspectiveHandler for ComputeExample {
 fn main() -> anyhow::Result<()> {
 
     let window_size = PhysicalSize::new(1600, 1200);
-
-    Perspective::new(window_size).run::<ComputeExample>()
+    Perspective::new(window_size).run_cli::<ComputeExample>()
 }
 
 

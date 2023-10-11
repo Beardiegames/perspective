@@ -6,9 +6,6 @@ pub struct ComputeSettings<'a, T>
 where T: bytemuck::Pod + Clone
 {
     pub label: &'a str, 
-    pub group_index: u32,// represented within shader as @binding
-    pub binding_index: u32,// represented within shader as @binding
-
     pub data_set: Vec<T>,
     pub shader_src: &'a str, // string slice representation of the actual shader code
     pub entry_point: &'a str, // name of the entry funcion/methode, called on update
@@ -85,8 +82,8 @@ impl ComputeProcessor //where T: ComputeData
                 | wgpu::BufferUsages::COPY_SRC,
         });
 
-        let bind_group_index = settings.group_index;
-        let binding_index = settings.binding_index;
+        let bind_group_index = 0;
+        let binding_index = 0;
 
         let layout = pipeline.get_bind_group_layout(bind_group_index);
         let bind_group = core.device.create_bind_group(&wgpu::BindGroupDescriptor {

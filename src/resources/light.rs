@@ -1,4 +1,4 @@
-use crate::{WgpuCore, WgpuBinding, create_light_binding};
+use crate::{WgpuCore, WgpuDataBinding, create_effects_binding};
 
 
 #[repr(C)]
@@ -16,7 +16,7 @@ pub struct LightUniform {
 
 pub struct Light {
     pub uniform: LightUniform,
-    pub binding: WgpuBinding,
+    pub binding: WgpuDataBinding,
 }
 
 impl Light {
@@ -31,7 +31,7 @@ impl Light {
             ambient: [0.03, 0.05, 0.075],
             _padding3: 0,
         };
-        let binding = create_light_binding(device, layout, uniform);
+        let binding = create_effects_binding(device, layout, uniform);
         
         Light {
             uniform,

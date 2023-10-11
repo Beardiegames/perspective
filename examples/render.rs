@@ -4,12 +4,12 @@ use perspective::*;
 fn main() -> anyhow::Result<()> {
     let window_size = PhysicalSize::new(1600, 1200);
     
-    Perspective::new(window_size).run::<RenderExample>()
+    Perspective::new(window_size).run_winit::<RenderExample>()
 }
 
 
 pub struct RenderExample {
-    renderer: RenderProcessor,
+    renderer: Renderer,
     
     log_counter: u8,
     frame_tot: f32,
@@ -19,20 +19,26 @@ impl PerspectiveHandler for RenderExample {
 
     fn startup(gx: &mut WgpuCore) -> Self {
 
-        let renderer = gx.setup_render_processor(
-            &RenderSettings {
-                label: "RenderExample", 
-                group_index: 0,// represented within shader as @binding
-                binding_index: 0,// represented within shader as @binding
-    
-                shader_src: include_str!("shaders/basic_shader.wgsl"),
-                vertex_entry_point: "vertex_main",
-                fragment_entry_point: "fragment_main",
+        //let tex_bind = gx.create_texture_binding(include_bytes!("textures/cat-sprite.png"));
 
-                image_data: include_bytes!("textures/cat-sprite.png"),
-                camera_setup: CameraSetup::default(),
+        let mut textures = TexturePack::new();
+        let texture_id = textures.load(
+            &gx.device, 
+            &gx.queue, 
+            include_bytes!("textures/cat-sprite.png"), 
+            (0.5, 0.5)
+        );
+
+        let renderer = gx.setup_render_processor(
+            &CameraSetup::default(),
+            textures,
+            &SpritePoolSetup {
+                texture_id,
+                image_size: (0, 0),
+                tile_size: (0.5, 0.5),
+                ..Default::default()
             }
-        ).unwrap();
+        );
 
         RenderExample { renderer, log_counter: 0, frame_tot: 0.0 }
     }
