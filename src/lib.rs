@@ -1,24 +1,63 @@
+
+//! Example:
+//!``` rust
+//! use perspective::*;
+//!
+//! fn main() -> anyhow::Result<()> {
+//!     let window_size = PhysicalSize::new(1600, 1200);
+//!     Perspective::new(window_size).run_winit::<RenderExample>()
+//! }
+//!
+//! pub struct RenderExample {
+//!     renderer: Renderer,
+//! }
+//!
+//! impl PerspectiveHandler for RenderExample {
+//!
+//!     fn startup(gx: &mut WgpuCore) -> Self {
+//!
+//!         let mut textures = TexturePack::default();
+//!
+//!         let renderer = gx.setup_render_processor(
+//!             &CameraSetup::default(),
+//!             textures,
+//!             &[]
+//!         );
+//!         RenderExample { renderer }
+//!     }
+//!
+//!     fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { 
+//!         false
+//!     }
+//!
+//!     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
+//!         // application update code
+//!     }
+//! 
+//! 
+//!     fn resize(&mut self, width: u32, height: u32) {
+//!         // handle window resize events
+//!     }
+//! 
+//!     fn draw(&mut self, ctx: RenderContext) { 
+//!         self.renderer.execute_render_pipeline(ctx);
+//!     }
+//! }
+//!```
+
 pub mod shapes;
-mod core;
-mod renderer;
-mod resources;
-mod utility;
-mod bindings;
+pub mod core;
+pub mod renderer;
+pub mod resources;
+pub mod utility;
+pub mod bindings;
 
-pub use crate::core::*;
-pub use renderer::*;
-pub use resources::*;
-pub use utility::*;
-pub use wgpu::*;
-pub use bindings::*;
-
-
-pub use winit::{
-    event::*,
-	event_loop::{ControlFlow, EventLoop}, 
-	window::{Window, WindowBuilder},
-    dpi::PhysicalSize,
-};
+use crate::core::*;
+//use renderer::*;
+//use resources::*;
+use utility::*;
+use wgpu::*;
+use bindings::*;
 
 
 pub struct Perspective {
@@ -26,6 +65,13 @@ pub struct Perspective {
     pub timer: RunTime,
     pub stop_running: bool,
 }
+
+pub use winit::{
+    event::*,
+	event_loop::{ControlFlow, EventLoop}, 
+	window::{Window, WindowBuilder},
+    dpi::PhysicalSize,
+};
 
 impl Perspective {
     /// create a new Perspective instance
