@@ -5,7 +5,7 @@ use cgmath::prelude::*;
 use wgpu::util::DeviceExt;
 
 
-pub struct SpriteObject {
+pub struct SpriteRenderObject {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub num_vertices: u32,
@@ -14,7 +14,7 @@ pub struct SpriteObject {
     pub animation: SpriteGpuHandle,
 }
 
-impl SpriteObject {
+impl SpriteRenderObject {
     pub fn new(
         device: &Device, 
         bind_group_layouts: &PerspectiveShaderLayout,
@@ -36,7 +36,7 @@ impl SpriteObject {
             settings.max_pool_size //instances.len()
         );
 
-        SpriteObject {
+        SpriteRenderObject {
             vertex_buffer,
             index_buffer,
             num_vertices,
@@ -64,16 +64,27 @@ impl Default for SpritePoolSetup {
             image_size: (1024, 1024),
             tile_size: (0.0625, 0.0625),
             animation_frames: vec![[0.0, 0.0], [0.5, 0.0], [0.0, 0.5], [0.5, 0.5]],
-            max_pool_size: 100_000,
+            max_pool_size: 10_000,
             temp_offset: 0.0,
         }
     }
 }
 
+pub struct SpritePoolID {
+    index: usize,
+}
+
+pub struct SpriteInstanceID {
+    pool_idx: usize,
+    instance_idx: usize,
+}
+
 pub struct SpritePool {
-    pub sprite_obj: SpriteObject,
+    pub sprite_obj: SpriteRenderObject,
     pub instances: Vec<ObjectInstance>,
     pub instance_buffer: wgpu::Buffer,
+
+    pub num_spawns: usize,
 }
 
 impl SpritePool {
@@ -84,24 +95,40 @@ impl SpritePool {
         settings: &SpritePoolSetup,
     ) -> Self { 
 
-        let sprite_obj = SpriteObject::new(
+        let sprite_obj = SpriteRenderObject::new(
             device, //queue, 
             bind_group_layouts,
             settings,
         );
 
-        let instances = (0..NUM_INSTANCES_PER_ROW * NUM_INSTANCES_PER_ROW)
+        let instances = (0..settings.max_pool_size as u32)
             .map(|instance_idx| {
-                let hwidth = NUM_INSTANCES_PER_ROW as f32 * 0.5;
-                let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
-                let z = ((instance_idx as f32).cos() / 2.0) + (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+                // let hwidth = NUM_INSTANCES_PER_ROW as f32 * 0.5;
+                // let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+                // let z = ((instance_idx as f32).cos() / 2.0) + (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
 
-                let position = cgmath::Vector3 { x, y: settings.temp_offset, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
-                let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
+                // let position = cgmath::Vector3 { x, y: settings.temp_offset, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
+                // let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
                 
-                ObjectInstance { instance_idx, position, rotation, }
+                ObjectInstance { 
+                    instance_idx, 
+                    position: cgmath::Vector3::zero(), 
+                    rotation: cgmath::Quaternion::zero(), }
             })
             .collect::<Vec<_>>();           
+
+        // let instances = (0..NUM_INSTANCES_PER_ROW * NUM_INSTANCES_PER_ROW)
+        //     .map(|instance_idx| {
+        //         let hwidth = NUM_INSTANCES_PER_ROW as f32 * 0.5;
+        //         let x = ((instance_idx as f32).sin() / 5.0) + (instance_idx % NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+        //         let z = ((instance_idx as f32).cos() / 2.0) + (instance_idx / NUM_INSTANCES_PER_ROW) as f32 - hwidth;
+
+        //         let position = cgmath::Vector3 { x, y: settings.temp_offset, z: z * 0.35 } - INSTANCE_DISPLACEMENT;
+        //         let rotation = cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0));
+                
+        //         ObjectInstance { instance_idx, position, rotation, }
+        //     })
+        //     .collect::<Vec<_>>();           
 
         let instance_data = instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
 
@@ -109,7 +136,7 @@ impl SpritePool {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(&instance_data),
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             }
         );
 
@@ -117,8 +144,19 @@ impl SpritePool {
             sprite_obj,
             instances,
             instance_buffer,
+
+            num_spawns: 0
         }
-        
+    }
+
+    pub fn update_instance_buffer(&mut self, gx: &WgpuCore) {
+        let instance_data = self.instances.iter().map(ObjectInstance::to_raw).collect::<Vec<_>>();
+
+        gx.queue.write_buffer(
+            &self.instance_buffer, 
+            0, 
+            bytemuck::cast_slice(&instance_data),
+        );
     }
 }
 
@@ -141,7 +179,7 @@ impl Renderer {
         device: &Device, 
         camera_setup: &CameraSetup, 
         textures: TexturePack,
-        sprite_setup: &[SpritePoolSetup]
+        //sprite_setup: &[SpritePoolSetup]
     ) -> Self {
 
         let bindgroup_layouts = PerspectiveShaderLayout::new(device);
@@ -149,10 +187,10 @@ impl Renderer {
         let camera = Camera::new(device, bindgroup_layouts.camera_layout(), camera_setup);
         let light = Light::new(device, bindgroup_layouts.effects_layout());
         
-        let mut sprites = Vec::new();
-        for s in sprite_setup {
-            sprites.push(SpritePool::new(device, &bindgroup_layouts, s));
-        }
+        let sprites = Vec::new();
+        //for s in sprite_setup {
+            //sprites.push(SpritePool::new(device, &bindgroup_layouts, s));
+        //}
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader Module"),
@@ -195,14 +233,14 @@ impl Renderer {
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth32Float,
                 depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
+                depth_compare: wgpu::CompareFunction::LessEqual,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
-                alpha_to_coverage_enabled: false,
+                alpha_to_coverage_enabled: true,
             },
             multiview: None,
         });
@@ -219,11 +257,45 @@ impl Renderer {
         }
     }
 
+    pub fn create_sprite_pool(&mut self, gx: &WgpuCore, setup: &SpritePoolSetup) -> SpritePoolID {
+        self.sprites.push(SpritePool::new(&gx.device, &self.bindgroup_layouts, setup));
+        renderer::SpritePoolID { index: self.sprites.len() - 1 }
+    }
+
+    pub fn spawn_sprite(
+        &mut self,
+        sprite_pool_id: &SpritePoolID,
+
+        position: cgmath::Vector3<f32>,
+        rotation: cgmath::Quaternion<f32>,
+    ) -> SpriteInstanceID {
+
+        let instance_idx = self.sprites[sprite_pool_id.index].num_spawns;
+        let sprite = &mut self.sprites[sprite_pool_id.index].instances[instance_idx];
+            sprite.position = position;
+            sprite.rotation = rotation;
+
+        self.sprites[sprite_pool_id.index].num_spawns += 1;
+
+        SpriteInstanceID { 
+            pool_idx: sprite_pool_id.index, 
+            instance_idx: self.sprites[sprite_pool_id.index].num_spawns - 1
+        }
+    }
+
+    pub fn get_sprite(
+        &mut self,
+        sprite_instance_id: &SpriteInstanceID,
+    ) -> &mut ObjectInstance {
+        &mut self.sprites[sprite_instance_id.pool_idx].instances[sprite_instance_id.instance_idx]
+    }
+
     pub fn execute_render_pipeline(&mut self, mut ctx: RenderContext) {
         self.camera.buffer_update(ctx.gx);
         self.light.buffer_update(ctx.gx);
 
         for spritepool in &mut self.sprites {
+            spritepool.update_instance_buffer(&ctx.gx);
             spritepool.sprite_obj.animation.buffer_update(ctx.gx, ctx.px.timer.sprite_frames());
         }
 
@@ -244,7 +316,8 @@ impl Renderer {
                 render_pass.set_vertex_buffer(1, spritepool.instance_buffer.slice(..));
 
                 render_pass.set_index_buffer(spritepool.sprite_obj.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-                render_pass.draw_indexed(0..spritepool.sprite_obj.num_indices, 0, 0..spritepool.instances.len() as _);
+                //render_pass.draw_indexed(0..spritepool.sprite_obj.num_indices, 0, 0..spritepool.instances.len() as _);
+                render_pass.draw_indexed(0..spritepool.sprite_obj.num_indices, 0, 0..spritepool.num_spawns as _);
             }
         } 
 

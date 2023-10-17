@@ -45,17 +45,18 @@
 //! }
 //!```
 
-pub mod shapes;
-pub mod core;
-pub mod renderer;
-pub mod resources;
-pub mod utility;
-pub mod bindings;
+pub mod prelude;
+mod shapes;
+mod core;
+mod renderer;
+mod resources;
+mod interface;
+mod bindings;
 
 use crate::core::*;
 //use renderer::*;
 //use resources::*;
-use utility::*;
+use interface::*;
 use wgpu::*;
 use bindings::*;
 

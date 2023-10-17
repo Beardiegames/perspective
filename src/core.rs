@@ -92,13 +92,12 @@ impl WgpuCore {
         }
     }
 
-    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack, sprite_setup: &[SpritePoolSetup]) -> Renderer {
+    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack) -> Renderer {
         Renderer::new(
             &self.device, 
             //&self.queue, 
             camera_setup,
-            textures,
-            sprite_setup
+            textures
         )
     }
 }
