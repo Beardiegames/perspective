@@ -7,14 +7,21 @@ struct CameraUniform {
 @group(1) @binding(0)
 var<uniform> camera: CameraUniform;
 
-struct Light {
-    position: vec3<f32>,
-    color: vec3<f32>,
-    ambient: vec3<f32>,
+// struct PointLight {
+//     position: vec3<f32>,
+//     color: vec3<f32>,
+//     ambient: vec3<f32>,
+// }
+// @group(2) @binding(0)
+// var<uniform> light: PointLight;
+
+struct AmbientLight {
+    direction: vec3<f32>,
+    light_color: vec3<f32>,
+    shadow_color: vec3<f32>,
 }
 @group(2) @binding(0)
-var<uniform> light: Light;
-
+var<uniform> ambient_light: AmbientLight;
 
 struct VertexInput {
     @location(0) pos: vec3<f32>,
@@ -101,12 +108,17 @@ fn frag(
     // let ambient_strength = 0.1;
     // let ambient_color = light.color * ambient_strength;
 
-    let light_dir = normalize(light.position - in.world_position);
+    // let light_dir = normalize(light.position - in.world_position);
 
-    let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
-    let diffuse_color = light.color * diffuse_strength / distance(in.world_position, light.position);;
+    // let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
+    // let diffuse_color = light.color * diffuse_strength / distance(in.world_position, light.position);
 
-    let result = (light.ambient + diffuse_color) * object_color.xyz;
+    let light_strength = max(dot(in.world_normal, ambient_light.direction), 0.0);
+    let shadow_strength = 1.0 - light_strength;
+    let light_color = ambient_light.light_color * light_strength;
+    let shadow_color = ambient_light.shadow_color * shadow_strength;
+
+    let result = (light_color + shadow_color) * object_color.xyz;
     return vec4<f32>(result, object_color.a);
 }
 

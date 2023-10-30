@@ -1,10 +1,13 @@
 # perspective
-- use simple RTS demo game as proof of concept
 
-## in-progress
-- populus style changable heightmap
+## Todos:
+- object transform interface
+- sprite animation slicer
+- easy instancing (batch rendering)
+- single renderpipe, no custom render setup
+- re-introducing shader-scripting in an easier way
 
 
-## wannahaves
-- entity object renderer
-- scenery renderer
+## Nice to have:
+- bump mapping
+- shadow casting

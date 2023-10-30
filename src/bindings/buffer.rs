@@ -2,7 +2,7 @@ use wgpu::{Device, Buffer, util::{DeviceExt, BufferInitDescriptor}};
 
 use crate::{
     CameraUniform, 
-    LightUniform, 
+    AmbientLightUniform, 
     SpriteAnimationData, 
     SpriteFrameElement
 };
@@ -18,11 +18,12 @@ pub fn create_camera_buffer(device: &Device, camera_uniform: CameraUniform) -> B
     )
 }
 
-pub fn create_light_buffer(device: &Device, light_uniform: LightUniform) -> Buffer {
+
+pub fn create_lights_buffer(device: &Device, ambient_light_uniform: AmbientLightUniform) -> Buffer {
     device.create_buffer_init(
         &wgpu::util::BufferInitDescriptor {
             label: Some("Light Buffer"),
-            contents: bytemuck::cast_slice(&[light_uniform]),
+            contents: bytemuck::cast_slice(&[ambient_light_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         }
     )

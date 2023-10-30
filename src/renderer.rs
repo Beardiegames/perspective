@@ -166,7 +166,7 @@ pub struct Renderer {
     pub layout: wgpu::PipelineLayout,
 
     pub camera: Camera,
-    pub light: Light,
+    pub ambient_light: AmbientLight,
 
     pub bindgroup_layouts: PerspectiveShaderLayout,
     pub textures: TexturePack,
@@ -185,7 +185,7 @@ impl Renderer {
         let bindgroup_layouts = PerspectiveShaderLayout::new(device);
 
         let camera = Camera::new(device, bindgroup_layouts.camera_layout(), camera_setup);
-        let light = Light::new(device, bindgroup_layouts.effects_layout());
+        let ambient_light = AmbientLight::new(device, bindgroup_layouts.lights_layout());
         
         let sprites = Vec::new();
         //for s in sprite_setup {
@@ -250,7 +250,7 @@ impl Renderer {
             pipeline,
             layout,
             camera,
-            light,
+            ambient_light,
             bindgroup_layouts,
             textures,
             sprites,
@@ -292,7 +292,7 @@ impl Renderer {
 
     pub fn execute_render_pipeline(&mut self, mut ctx: RenderContext) {
         self.camera.buffer_update(ctx.gx);
-        self.light.buffer_update(ctx.gx);
+        self.ambient_light.buffer_update(ctx.gx);
 
         for spritepool in &mut self.sprites {
             spritepool.update_instance_buffer(&ctx.gx);
@@ -304,7 +304,7 @@ impl Renderer {
             render_pass.set_pipeline(&self.pipeline);
 
             render_pass.set_bind_group(1, &self.camera.binding.bindgroup, &[]);
-            render_pass.set_bind_group(2, &self.light.binding.bindgroup, &[]);
+            render_pass.set_bind_group(2, &self.ambient_light.binding.bindgroup, &[]);
 
             for spritepool in &mut self.sprites {
                 if let Some(tex) =  &self.textures.get(&spritepool.sprite_obj.texture_id) {

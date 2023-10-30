@@ -15,7 +15,7 @@ pub struct RenderExample {
     frame_tot: f32,
 
     megaman: SpriteInstanceID,
-    cat: SpriteInstanceID,
+    cats: Vec<SpriteInstanceID>,
 }
 
 impl PerspectiveHandler for RenderExample {
@@ -68,35 +68,46 @@ impl PerspectiveHandler for RenderExample {
 
         let megaman = renderer.spawn_sprite(
             &megaman_sprite_id,
-            cgmath::Vector3 { x: 1.0, y: 0.0, z: 0.0 },
+            cgmath::Vector3 { x: 0.0, y: 0.0, z: -5.0 },
             cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
         );
 
-        let cat = renderer.spawn_sprite(
-            &cat_sprite_id,
-            cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-            cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
-        );
+        let mut cats = Vec::new();
+        for _ci in 0..10_000 {
+            let cat = renderer.spawn_sprite(
+                &cat_sprite_id,
+                cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+            );
+            cats.push(cat);
+        }
 
-        RenderExample { renderer, log_counter: 0, frame_tot: 0.0, megaman, cat }
+        RenderExample { renderer, log_counter: 0, frame_tot: 0.0, megaman, cats }
     }
 
     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
         self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 5_000_000.0).sin();
         self.frame_tot += px.timer.frame_delta();
 
-        let xpos = 0.0 + ((px.timer.elapsed() as f32) / 500_000.0).cos() * 4.0;
-        let ypos = -3.0 + ((px.timer.elapsed() as f32) / 500_000.0).sin() * 4.0;
+        
 
-        self.renderer.light.uniform.position[0] = xpos;
-        self.renderer.light.uniform.position[2] = ypos;
+        self.renderer.ambient_light.uniform.direction[0] = 0.0;
+        self.renderer.ambient_light.uniform.direction[1] = 0.0;
+        self.renderer.ambient_light.uniform.direction[2] = 1.0;
 
-        let cat = self.renderer.get_sprite(&self.cat);
+        let mut offset = 0.0;
+        for cat_instance in &self.cats {
+            let xpos = 0.0 + (offset + (px.timer.elapsed() as f32) / 10_000_000.0).cos() * (1.0 + offset * 0.01);
+            let ypos = -5.0 + (offset + (px.timer.elapsed() as f32) / 10_000_000.0).sin() * (1.0 + offset * 0.01);
+
+            let cat = self.renderer.get_sprite(cat_instance);
             cat.position = cgmath::Vector3{ 
                 x: xpos, 
                 y: 0.0, 
                 z: ypos
             };
+            offset += 0.1;
+        }
 
         if self.log_counter == 255 {
             println!("frame_delta: {:?} secs", self.frame_tot / 256.0);
