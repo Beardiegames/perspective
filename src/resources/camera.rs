@@ -24,7 +24,7 @@ pub enum CameraProjection {
 
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable, Default)]
 pub struct CameraUniform {
     projection_matrix: [[f32; 4]; 4],
 }
@@ -58,7 +58,7 @@ impl Default for CameraSetup {
             aspect: 16.0/9.0,
             projection: CameraProjection::Perspective(80.0),
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 1000.0,
         }
     }
 }

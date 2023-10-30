@@ -48,6 +48,7 @@ impl PerspectiveHandler for RenderExample {
                 image_size: (0, 0),
                 tile_size: (0.5, 0.5),
                 temp_offset: -0.5,
+                max_pool_size: 100_000,
                 ..Default::default()
             }
         );
@@ -73,7 +74,7 @@ impl PerspectiveHandler for RenderExample {
         );
 
         let mut cats = Vec::new();
-        for _ci in 0..10_000 {
+        for _ci in 0..100_000 {
             let cat = renderer.spawn_sprite(
                 &cat_sprite_id,
                 cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
@@ -85,11 +86,17 @@ impl PerspectiveHandler for RenderExample {
         RenderExample { renderer, log_counter: 0, frame_tot: 0.0, megaman, cats }
     }
 
+    fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { 
+        false 
+    }
+
     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
         self.renderer.camera.eye.x = ((px.timer.elapsed() as f32) / 5_000_000.0).sin();
-        self.frame_tot += px.timer.frame_delta();
+        self.renderer.camera.eye.y = 10.0; 
+        self.renderer.camera.eye.z = 48.0; 
+        self.renderer.camera.target.y = -30.0;
 
-        
+        self.frame_tot += px.timer.frame_delta();
 
         self.renderer.ambient_light.uniform.direction[0] = 0.0;
         self.renderer.ambient_light.uniform.direction[1] = 0.0;
