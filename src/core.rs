@@ -5,6 +5,7 @@ use wgpu::{
     Surface, Adapter, Device,
     Dx12Compiler, InstanceDescriptor,
 };
+use crate::interface::RenderContext;
 
 pub use crate::renderer::*;
 pub use crate::resources::*;
@@ -16,6 +17,7 @@ pub struct WindowSettings<'a, W>
     pub window: &'a W,
     pub width: u32,
     pub height: u32,
+    pub camera: CameraSetup,
 }
 
 
@@ -32,6 +34,7 @@ pub struct WgpuCore {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub canvas: Option<Canvas>,
+    pub timer: RunTime,
 }
 
 
@@ -42,12 +45,13 @@ impl WgpuCore {
     {
         let instance = wgpu::Instance::new(WGPU_INSTANCE_DESCRIPTOR);
         
-        let (surface, size) = match settings {
+        let (surface, size, camera) = match settings {
                 Some(s) => (
                     unsafe { instance.create_surface(&s.window) }.ok(),
-                    (s.width.clamp(0, 50), s.height.clamp(0, 50))
+                    (s.width.clamp(0, 50), s.height.clamp(0, 50)),
+                    s.camera.clone(),
                 ),
-                None => (None, (0, 0))
+                None => (None, (0, 0), CameraSetup::default())
             };
 
         let adapter = instance
@@ -70,14 +74,15 @@ impl WgpuCore {
             )
             .block_on()?;
         
-        let canvas = create_canvas(surface, &device, &adapter, size);
-        
+        let canvas = create_canvas(surface, &device, &adapter, size);         
+
         Ok( WgpuCore {
             instance,
             adapter,
             device,
             queue,
             canvas,
+            timer: RunTime::new(),
         })
     }
 
@@ -91,15 +96,15 @@ impl WgpuCore {
             c.depth_map = DepthTexture::new(&self.device, &c.config);
         }
     }
-
-    pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, textures: TexturePack) -> Renderer {
-        Renderer::new(
-            &self.device, 
-            //&self.queue, 
-            camera_setup,
-            textures
-        )
-    }
+    
+    // pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, assets: AssetPack) -> Renderer {
+    //     Renderer::new(
+    //         &self.device, 
+    //         //&self.queue, 
+    //         camera_setup,
+    //         assets
+    //     )
+    // }
 }
 
 

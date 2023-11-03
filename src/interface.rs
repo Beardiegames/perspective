@@ -9,26 +9,92 @@ pub enum PerspectiveError {
 
 pub trait PerspectiveHandler {
 
-    fn startup(gx: &mut WgpuCore) -> Self;
+    #[allow(unused)]
+    fn setup(sys: PerspectiveSystem) -> Self;
 
     #[allow(unused)]
     fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { false }
 
     #[allow(unused)]
-    fn update(&mut self, gx: &mut WgpuCore, px: &mut Perspective) {}
+    fn update(&mut self, sys: PerspectiveSystem) {} //gx: &mut WgpuCore, px: &mut Perspective) {}
 
     #[allow(unused)]
     fn resize(&mut self, width: u32, height: u32) {}
 
-    #[allow(unused)]
-    fn draw(&mut self, mut ctx: RenderContext) {}
-    
+    // #[allow(unused)]
+    // fn draw(&mut self, mut ctx: RenderContext) {}  
+}
+
+pub struct PerspectiveSystem<'a> {
+    pub gx: &'a mut WgpuCore,
+    pub rnd: &'a mut Renderer,
+}
+
+impl<'a> PerspectiveSystem<'a> {
+
+    pub fn timer(&mut self) -> &mut RunTime {
+        &mut self.gx.timer
+    }
+
+    pub fn camera(&mut self) -> &mut Camera {
+        &mut self.rnd.camera
+    }
+
+    pub fn set_camera_position(&mut self, x:f32, y:f32, z:f32) {
+        self.rnd.camera.eye = cgmath::Point3::new(x, y, z);
+    }
+
+    pub fn set_camera_target(&mut self,  x:f32, y:f32, z:f32) {
+        self.rnd.camera.target = cgmath::Point3::new(x, y, z);
+    }
+
+    pub fn load_texture(
+        &mut self, 
+        image_data: &[u8], 
+        uv_scale: (f32, f32), 
+        pool_settings: Option<SpritePoolSettings>
+        ) -> SpritePoolID 
+    {
+        let texture_id = self.rnd.assets.load_texture(
+            &self.gx.device, 
+            &self.gx.queue, 
+            image_data, 
+            uv_scale
+        );
+
+        self.rnd.create_sprite_pool(
+            self.gx,
+            &texture_id,
+            &match pool_settings {
+                Some(s) => s,
+                None => SpritePoolSettings::default(),
+            }
+        )
+    }
+
+    pub fn spawn_sprite(
+        &mut self, 
+        sprite_pool_id: &SpritePoolID,
+        position: cgmath::Vector3<f32>,
+        rotation: cgmath::Quaternion<f32>
+        ) -> SpriteInstanceID 
+    {
+        self.rnd.sprites.spawn_sprite(sprite_pool_id, position, rotation)
+    }
+
+    pub fn get_instance(
+        &mut self, 
+        instance_id: &SpriteInstanceID
+        ) -> &mut ObjectInstance 
+    {
+        self.rnd.sprites.get_instance(instance_id)
+    }
 }
 
 
 pub struct RenderContext<'a> {
-    pub px: &'a Perspective,
-    pub gx: &'a WgpuCore,
+    //pub px: &'a Perspective,
+    //pub gx: &'a WgpuCore,
     pub encoder: CommandEncoder,
     pub draw: Option<DrawContext<'a>>,
 }
@@ -60,7 +126,7 @@ impl<'a> RenderContext<'a> {
                         },
                     })],
                     depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: &drw.depth_map,
+                        view: drw.depth_map,
                         depth_ops: Some(wgpu::Operations {
                             load: wgpu::LoadOp::Clear(1.0),
                             store: true,

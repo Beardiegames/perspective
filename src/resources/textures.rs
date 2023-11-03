@@ -139,33 +139,51 @@ impl WgpuTextureBinding {
     }
 }
 
-#[derive(Clone)]
-pub enum TextureID {
-    Index(usize),
-    Null,
+#[derive(Clone, PartialEq)]
+pub enum AssetKind {
+    Proxy,
+    Texture,
+}
+
+impl Default for AssetKind {
+    fn default() -> Self {
+        AssetKind::Proxy
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct AssetID {
+    idx: Option<usize>,
+    kind: AssetKind,
+}
+
+impl AssetID {
+    pub fn is_texture(&self) -> bool { 
+        self.kind == AssetKind::Texture 
+    }
 }
 
 #[derive(Default)]
-pub struct TexturePack {
+pub struct AssetPack {
     buffered_textures: Vec<WgpuTextureBinding>,
 }
 
-impl TexturePack {
-    // pub fn new() -> Self {
-    //     TexturePack { buffered_textures: Vec::new() }
-    // }
+impl AssetPack {
 
-    pub fn load(&mut self, device: &Device, queue: &Queue, image_data: &[u8], uv_scale: (f32, f32)) -> TextureID {
+    pub fn load_texture(&mut self, device: &Device, queue: &Queue, image_data: &[u8], uv_scale: (f32, f32)) -> AssetID {
         self.buffered_textures.push(
             WgpuTextureBinding::new(device, queue, image_data, uv_scale)
         ); 
-        TextureID::Index(self.buffered_textures.len() - 1)
+        AssetID {
+            idx: Some(self.buffered_textures.len() - 1),
+            kind: AssetKind::Texture
+        }
     }
 
-    pub fn get(&self, id: &TextureID) -> Option<&WgpuTextureBinding> {
-        match id {
-            TextureID::Index(idx) => Some(&self.buffered_textures[*idx]),
-            TextureID::Null => None
+    pub fn get_texture(&self, id: &AssetID) -> Option<&WgpuTextureBinding> {
+        match id.is_texture() {
+            true => id.idx.map(|i| &self.buffered_textures[i]),
+            false => None,
         }
     }
 }

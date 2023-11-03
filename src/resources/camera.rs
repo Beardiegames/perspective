@@ -38,7 +38,7 @@ impl CameraUniform {
     }
 }
 
-
+#[derive(Clone)]
 pub struct CameraSetup {
     pub eye: cgmath::Point3<f32>,
     pub target: cgmath::Point3<f32>,
