@@ -17,6 +17,18 @@ pub use crate::bindings::*;
 pub use wgpu::*;
 
 #[allow(unused_imports)]
-pub use crate::*;
+pub use crate::{Perspective, PerspectiveBuilder};
 
+#[allow(unused_imports)]
+pub use winit::{
+    event::*,
+	event_loop::{ControlFlow, EventLoop}, 
+	window::{Window, WindowBuilder},
+    dpi::PhysicalSize,
+};
+
+#[allow(unused_imports)]
 pub use cgmath::prelude::*;
+
+#[allow(unused_imports)]
+pub use cgmath::*;

@@ -5,28 +5,22 @@ use wgpu::{
     Surface, Adapter, Device,
     Dx12Compiler, InstanceDescriptor,
 };
-use crate::interface::RenderContext;
+
+pub use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop}, 
+    window::{Window, WindowBuilder},
+    dpi::PhysicalSize,
+};
 
 pub use crate::renderer::*;
 pub use crate::resources::*;
-
-
-pub struct WindowSettings<'a, W>
-    where W: HasRawWindowHandle + HasRawDisplayHandle,
-{
-    pub window: &'a W,
-    pub width: u32,
-    pub height: u32,
-    pub camera: CameraSetup,
-}
-
 
 pub struct Canvas {
     pub surface: wgpu::Surface,
     pub config: wgpu::SurfaceConfiguration,
     pub depth_map: DepthTexture,
 }
-
 
 pub struct WgpuCore {
     pub instance: wgpu::Instance,
@@ -37,22 +31,13 @@ pub struct WgpuCore {
     pub timer: RunTime,
 }
 
-
 impl WgpuCore {
 
-    pub fn new<W>(settings: Option<&WindowSettings<W>>) -> anyhow::Result<Self>
-        where W: HasRawWindowHandle + HasRawDisplayHandle,
+    pub fn new(window: &Window, size: PhysicalSize<u32>) -> anyhow::Result<Self>
+        where Window: HasRawWindowHandle + HasRawDisplayHandle,
     {
         let instance = wgpu::Instance::new(WGPU_INSTANCE_DESCRIPTOR);
-        
-        let (surface, size, camera) = match settings {
-                Some(s) => (
-                    unsafe { instance.create_surface(&s.window) }.ok(),
-                    (s.width.clamp(0, 50), s.height.clamp(0, 50)),
-                    s.camera.clone(),
-                ),
-                None => (None, (0, 0), CameraSetup::default())
-            };
+        let surface = unsafe { instance.create_surface(window) }.ok();
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptionsBase {
@@ -96,42 +81,35 @@ impl WgpuCore {
             c.depth_map = DepthTexture::new(&self.device, &c.config);
         }
     }
-    
-    // pub fn setup_render_processor(&mut self, camera_setup: &CameraSetup, assets: AssetPack) -> Renderer {
-    //     Renderer::new(
-    //         &self.device, 
-    //         //&self.queue, 
-    //         camera_setup,
-    //         assets
-    //     )
-    // }
 }
-
 
 // -- helpers --
 
 const WGPU_INSTANCE_DESCRIPTOR: InstanceDescriptor = InstanceDescriptor { 
     backends: wgpu::Backends::all(),
     dx12_shader_compiler: Dx12Compiler::Fxc,
+    flags: wgpu::InstanceFlags::DEBUG,
+    gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
 };
 
-fn create_canvas(surface: Option<Surface>, device: &Device, adapter: &Adapter, size: (u32, u32)) -> Option<Canvas> {
+fn create_canvas(surface: Option<Surface>, device: &Device, adapter: &Adapter, size: PhysicalSize<u32>) -> Option<Canvas> {
     surface.map(|srf| {
-        let surface_caps = srf.get_capabilities(adapter);
+        // let surface_caps = srf.get_capabilities(adapter);
 
-        let surface_format = surface_caps.formats.iter()
-            .copied().find(|f| f.describe().srgb)
-            .unwrap_or(surface_caps.formats[0]);
+        // let surface_format = surface_caps.formats.iter()
+        //     .copied().find(|f| f.describe().srgb)
+        //     .unwrap_or(surface_caps.formats[0]);
 
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface_format,
-            width: size.0,
-            height: size.1,
-            present_mode: surface_caps.present_modes[0],
-            alpha_mode: surface_caps.alpha_modes[0],
-            view_formats: vec![],
-        };
+        // let config = wgpu::SurfaceConfiguration {
+        //     usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        //     format: surface_format,
+        //     width: size.width,
+        //     height: size.height,
+        //     present_mode: surface_caps.present_modes[0],
+        //     alpha_mode: surface_caps.alpha_modes[0],
+        //     view_formats: vec![],
+        // };
+        let config = srf.get_default_config(adapter, size.width, size.height).unwrap();
         srf.configure(device, &config);
 
         let depth_map = DepthTexture::new(device, &config);

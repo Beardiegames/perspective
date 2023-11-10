@@ -20,7 +20,7 @@ impl SpriteRenderObject {
         bind_group_layouts: &PerspectiveShaderLayout,
         texture_id: AssetID,
         settings: &SpritePoolSettings,
-    ) -> Self 
+        ) -> Self 
     {
         // Setup vertex bindings
         let shape = crate::shapes::create_square([settings.tile_size.0, settings.tile_size.1]);
@@ -93,8 +93,8 @@ impl SpritePool {
         bind_group_layouts: &PerspectiveShaderLayout,
         texture_id: AssetID,
         settings: &SpritePoolSettings,
-    ) -> Self { 
-
+        ) -> Self 
+    {
         let sprite_obj = SpriteRenderObject::new(
             device, //queue, 
             bind_group_layouts,
@@ -141,22 +141,25 @@ impl SpritePool {
     }
 }
 
+#[derive(Default)]
 pub struct Sprites {
     sprite_pools: Vec<SpritePool>,
 }
 
 impl Sprites {
     pub fn new() -> Self {
-        Sprites {
-            sprite_pools: Vec::new()
-        }
+        Sprites::default()
     }
 
-    pub fn mut_pool_list(&mut self) -> &mut Vec<SpritePool> {
+    pub fn mut_pool_list(&mut self) 
+        -> &mut Vec<SpritePool> 
+    {
         &mut self.sprite_pools
     }
 
-    pub fn add_sprite_pool(&mut self, sprite_pool: SpritePool) -> SpritePoolID {
+    pub fn add_sprite_pool(&mut self, sprite_pool: SpritePool) 
+        -> SpritePoolID 
+    {
         self.sprite_pools.push(sprite_pool);
         SpritePoolID { index: self.sprite_pools.len() - 1 }
     }
@@ -167,8 +170,8 @@ impl Sprites {
 
         position: cgmath::Vector3<f32>,
         rotation: cgmath::Quaternion<f32>,
-    ) -> SpriteInstanceID {
-
+        ) -> SpriteInstanceID 
+    {
         let instance_idx = self.sprite_pools[sprite_pool_id.index].num_spawns;
         let sprite = &mut self.sprite_pools[sprite_pool_id.index].instances[instance_idx];
             sprite.position = position;
@@ -182,10 +185,8 @@ impl Sprites {
         }
     }
 
-    pub fn get_instance(
-        &mut self,
-        sprite_instance_id: &SpriteInstanceID,
-    ) -> &mut ObjectInstance {
+    pub fn get_instance(&mut self, sprite_instance_id: &SpriteInstanceID) 
+    -> &mut ObjectInstance {
         &mut self.sprite_pools[sprite_instance_id.pool_idx].instances[sprite_instance_id.instance_idx]
     }
 }
@@ -209,18 +210,12 @@ impl Renderer {
         device: &Device, 
         camera_setup: &CameraSetup, 
         assets: AssetPack,
-        //sprite_setup: &[SpritePoolSettings]
-    ) -> Self {
-
+        ) -> Self 
+    {
         let bindgroup_layouts = PerspectiveShaderLayout::new(device);
-
         let camera = Camera::new(device, bindgroup_layouts.camera_layout(), camera_setup);
-        let ambient_light = AmbientLight::new(device, bindgroup_layouts.lights_layout());
-        
+        let ambient_light = AmbientLight::new(device, bindgroup_layouts.lights_layout());     
         let sprites = Sprites::new();
-        //for s in sprite_setup {
-            //sprites.push(SpritePool::new(device, &bindgroup_layouts, s));
-        //}
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader Module"),
@@ -247,6 +242,7 @@ impl Renderer {
                 entry_point: "frag",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    //format: wgpu::TextureFormat::Rgba8UnormSrgb,
                     blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -263,7 +259,7 @@ impl Renderer {
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth32Float,
                 depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::LessEqual,
+                depth_compare: wgpu::CompareFunction::Less,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
@@ -287,11 +283,22 @@ impl Renderer {
         }
     }
 
-    pub fn create_sprite_pool(&mut self, gx: &WgpuCore, texture_id: &AssetID, setup: &SpritePoolSettings) -> SpritePoolID {
+    pub fn create_sprite_pool(
+        &mut self, 
+        gx: &WgpuCore, 
+        texture_id: &AssetID, 
+        setup: &SpritePoolSettings
+        ) -> SpritePoolID 
+    {
         self.sprites.add_sprite_pool(SpritePool::new(&gx.device, &self.bindgroup_layouts, texture_id.clone(), setup))
     }
 
-    pub fn execute_render_pipeline(&mut self, gx: &WgpuCore, mut ctx: RenderContext) {
+    pub fn execute_render_pipeline(
+        &mut self, 
+        gx: &WgpuCore, 
+        mut ctx: RenderContext
+        ) 
+    {
         self.camera.buffer_update(gx);
         self.ambient_light.buffer_update(gx);
 

@@ -2,7 +2,6 @@ use std::num::{NonZeroU8};
 use image::{ImageBuffer, Rgba};
 use wgpu::*;
 
-
 pub struct WgpuTextureBinding {
     pub image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     pub size: Extent3d,
@@ -12,15 +11,13 @@ pub struct WgpuTextureBinding {
 }
 
 impl WgpuTextureBinding {
-
     pub fn new(
         device: &wgpu::Device, 
         queue: &wgpu::Queue, 
         image_data: &[u8],
         uv_scale: (f32, f32),
-
-    ) -> Self {
-
+        ) -> Self 
+    {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -55,8 +52,6 @@ impl WgpuTextureBinding {
             depth_or_array_layers: 1,
         };
 
-        //let uv_scale = [0.5; 2];
-
         let texture = device.create_texture(
             &wgpu::TextureDescriptor {
                 size,
@@ -80,8 +75,8 @@ impl WgpuTextureBinding {
             &image_buffer,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0),
-                rows_per_image: std::num::NonZeroU32::new(dimensions.1),
+                bytes_per_row: Some(4 * dimensions.0),
+                rows_per_image: Some(dimensions.1),
             },
             size,
         );
@@ -102,14 +97,14 @@ impl WgpuTextureBinding {
             lod_min_clamp: 0.0,
             lod_max_clamp: 0.0,
             compare: None,
-            anisotropy_clamp: NonZeroU8::new(8),
+            anisotropy_clamp: 8,
             border_color: None,
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Linear, //Nearest
+            mipmap_filter: wgpu::FilterMode::Linear, //Nearest,
         });
         
         let bindgroup = device.create_bind_group(
@@ -139,16 +134,10 @@ impl WgpuTextureBinding {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub enum AssetKind {
-    Proxy,
+    #[default] Proxy,
     Texture,
-}
-
-impl Default for AssetKind {
-    fn default() -> Self {
-        AssetKind::Proxy
-    }
 }
 
 #[derive(Default, Clone)]
@@ -169,8 +158,14 @@ pub struct AssetPack {
 }
 
 impl AssetPack {
-
-    pub fn load_texture(&mut self, device: &Device, queue: &Queue, image_data: &[u8], uv_scale: (f32, f32)) -> AssetID {
+    pub fn load_texture(
+        &mut self, 
+        device: &Device, 
+        queue: &Queue, 
+        image_data: &[u8], 
+        uv_scale: (f32, f32)
+        ) -> AssetID 
+    {
         self.buffered_textures.push(
             WgpuTextureBinding::new(device, queue, image_data, uv_scale)
         ); 

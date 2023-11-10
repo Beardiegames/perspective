@@ -2,12 +2,11 @@ use perspective::prelude::*;
 
 
 fn main() -> anyhow::Result<()> {
-    Perspective::default()
+    PerspectiveBuilder::new()
         .set_window_size(PhysicalSize::new(1600, 1200))
         .set_camera(CameraSetup::default())
         .run::<RenderExample>()
 }
-
 
 pub struct RenderExample {
     log_counter: u8,
@@ -52,8 +51,8 @@ impl PerspectiveHandler for RenderExample {
         for _ci in 0..100_000 {
             megamans.push(sys.spawn_sprite(
                 &mageman_sprite,
-                cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-                cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+                Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                Quaternion::from_axis_angle(Vector3::unit_z(), Deg(0.0))
             ));
         }
 
@@ -61,15 +60,15 @@ impl PerspectiveHandler for RenderExample {
         for _ci in 0..100_000 {
             cats.push(sys.spawn_sprite(
                 &cat_sprite,
-                cgmath::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-                cgmath::Quaternion::from_axis_angle(cgmath::Vector3::unit_z(), cgmath::Deg(0.0))
+                Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                Quaternion::from_axis_angle(Vector3::unit_z(), Deg(0.0))
             ));
         }
 
         RenderExample { log_counter: 0, frame_tot: 0.0, megamans, cats }
     }
 
-    fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { 
+    fn input(&mut self, _gx: &mut WgpuCore, _event: &WindowEvent) -> bool { 
         false 
     }
 
@@ -83,7 +82,7 @@ impl PerspectiveHandler for RenderExample {
         sys.rnd.ambient_light.uniform.direction[1] = 0.0;
         sys.rnd.ambient_light.uniform.direction[2] = 1.0;
 
-        let time_elapsed = sys.timer().elapsed() as f32 / 100_000_000.0;
+        let time_elapsed = sys.timer().average_step_time() as f32 / 100_000_000.0;
 
         let mut offset = 0.0;
         for cat_instance in &self.cats {
@@ -94,16 +93,12 @@ impl PerspectiveHandler for RenderExample {
             let ypos = -5.0 + si_time * (1.0 + offset * 0.01);
 
             let cat = sys.get_instance(cat_instance); //self.renderer.get_sprite(cat_instance);
-            cat.position = cgmath::Vector3{ 
-                x: xpos, 
-                y: 0.0, 
-                z: ypos
-            };
+            cat.position = Vector3 { x: xpos, y: 0.0, z: ypos };
 
             offset += 0.1;
         }
 
-        let time_elapsed = sys.timer().elapsed() as f32 / 75_000_000.0;
+        let time_elapsed = sys.timer().average_step_time() as f32 / 75_000_000.0;
 
         offset = 0.0;
         for megaman_instance in &self.megamans {
@@ -114,11 +109,7 @@ impl PerspectiveHandler for RenderExample {
             let ypos = -5.0 + si_time * (1.0 + offset * 0.01);
 
             let megaman = sys.get_instance(megaman_instance);
-            megaman.position = cgmath::Vector3{ 
-                x: -xpos, 
-                y: 0.0, 
-                z: ypos
-            };
+            megaman.position = Vector3 { x: -xpos, y: 0.0, z: ypos };
 
             offset += 0.1;
         }

@@ -108,6 +108,7 @@ pub fn create_square(uv_scale: [f32; 2]) -> Shape {
 //     }
 // }
 
+#[allow(dead_code)]
 pub fn create_hexagon(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![

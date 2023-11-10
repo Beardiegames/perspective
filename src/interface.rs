@@ -1,11 +1,9 @@
 use super::*;
 
-
 pub enum PerspectiveError {
     SurfaceError(wgpu::SurfaceError),
     NoCanvas,
 }
-
 
 pub trait PerspectiveHandler {
 
@@ -122,19 +120,21 @@ impl<'a> RenderContext<'a> {
                                 b: 0.3,
                                 a: 1.0,
                             }),
-                            store: true,
+                            store: StoreOp::Store,
                         },
                     })],
                     depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                         view: drw.depth_map,
                         depth_ops: Some(wgpu::Operations {
                             load: wgpu::LoadOp::Clear(1.0),
-                            store: true,
+                            store: StoreOp::Store,
                         }),
                         stencil_ops: None,
                     }),
-                })
-            ),
+                    occlusion_query_set: None, // FIX: might be an issue
+                    timestamp_writes: None, // FIX: might be an issue
+                }
+            )),
             None => None,
         }
     }
