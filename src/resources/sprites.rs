@@ -1,6 +1,6 @@
 use std::{f32::consts::PI};
 use bytemuck::{Pod, Zeroable};
-use crate::{WgpuCore, create_sprite_animation_binding, WgpuDataBinding};
+use crate::{WgpuGrapics, create_sprite_animation_binding, WgpuDataBinding};
 
 
 
@@ -52,7 +52,7 @@ impl SpriteGpuHandle {
         }
     }
 
-    pub fn buffer_update(&mut self, gx: &WgpuCore, frames_passed: u32) {
+    pub fn buffer_update(&mut self, gx: &WgpuGrapics, frames_passed: u32) {
         self.frames_passed = frames_passed;
 
         gx.queue.write_buffer(

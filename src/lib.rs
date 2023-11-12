@@ -12,9 +12,9 @@
 //!     renderer: Renderer,
 //! }
 //!
-//! impl PerspectiveHandler for RenderExample {
+//! impl Perspective for RenderExample {
 //!
-//!     fn startup(gx: &mut WgpuCore) -> Self {
+//!     fn startup(gx: &mut WgpuGrapics) -> Self {
 //!
 //!         let mut textures = TexturePack::default();
 //!
@@ -26,11 +26,11 @@
 //!         RenderExample { renderer }
 //!     }
 //!
-//!     fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { 
+//!     fn input(&mut self, gx: &mut WgpuGrapics, event: &WindowEvent) -> bool { 
 //!         false
 //!     }
 //!
-//!     fn update(&mut self, _gx: &mut WgpuCore, px: &mut Perspective) {
+//!     fn update(&mut self, _gx: &mut WgpuGrapics, px: &mut Perspective) {
 //!         // application update code
 //!     }
 //! 
@@ -47,13 +47,14 @@
 
 pub mod prelude;
 mod shapes;
-mod core;
+mod gfx;
 mod renderer;
 mod resources;
 mod interface;
 mod bindings;
+mod spritepool;
 
-use crate::core::*;
+use crate::gfx::*;
 use interface::*;
 use wgpu::*;
 use bindings::*;
@@ -87,15 +88,15 @@ impl PerspectiveBuilder {
     }
 
     pub fn run<App>(self) -> anyhow::Result<()> 
-        where App: 'static + PerspectiveHandler 
+        where App: 'static + Perspective 
     {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-        let wgpu_core = core::WgpuCore::new(&window, self.size)?;
+        let wgpu_core = gfx::WgpuGrapics::new(&window, self.size)?;
         let renderer = Renderer::new(&wgpu_core.device, &self.camera_setup, AssetPack::default()); 
 
-        let perspective = Perspective {
+        let perspective = PerspectiveOperator {
             size: self.size,
             camera_setup: self.camera_setup,
             wgpu_core,
@@ -108,16 +109,16 @@ impl PerspectiveBuilder {
     }
 }
 
-pub struct Perspective {
+pub struct PerspectiveOperator {
     pub size: PhysicalSize<u32>,
     pub camera_setup: CameraSetup,
-    pub wgpu_core: WgpuCore,
+    pub wgpu_core: WgpuGrapics,
     pub window: Window,
     pub stop_running: bool,
     pub renderer: Renderer,
 }
 
-impl Perspective {
+impl PerspectiveOperator {
 
     /// return a tuple containing the (width, height) of the window
     pub fn window_size(&self) -> (u32, u32) { (self.size.width, self.size.height) }
@@ -126,11 +127,11 @@ impl Perspective {
     /// setting up a new window, hooking up a gpu device 
     /// and starting a event based game loop
     fn run<App>(mut self, event_loop: EventLoop<()>) -> anyhow::Result<()> 
-        where App: 'static + PerspectiveHandler
+        where App: 'static + Perspective
     {
         println!("-- perspective run:\n{:?}", self.wgpu_core.adapter.get_info());
 
-        let mut app = App::setup(PerspectiveSystem { gx: &mut self.wgpu_core, rnd: &mut self.renderer});
+        let mut app = App::setup(ControlPanel { gfx: &mut self.wgpu_core, draw: &mut self.renderer });
         event_loop.run(move |event, _, control_flow| self.event_handler(event, control_flow, &mut app));
     }
 
@@ -142,10 +143,10 @@ impl Perspective {
         event: Event<()>, 
         control_flow: &mut ControlFlow,
         //window: &Window, 
-        //wgpu_core: &mut WgpuCore, 
+        //wgpu_core: &mut WgpuGrapics, 
         app: &mut App
     )
-        where App: PerspectiveHandler
+        where App: Perspective
     {
         match event {
             Event::WindowEvent {
@@ -161,13 +162,13 @@ impl Perspective {
     }
 
     /// handles all window specific events:
-    /// the input event for calling PerspectiveHandler intput
+    /// the input event for calling Perspective intput
     /// basic application events for clean exit
     /// and window resize events
     fn window_event_handler<App>(&mut self, event: &WindowEvent, control_flow: &mut ControlFlow, app: &mut App)
-        where App: PerspectiveHandler
+        where App: Perspective
     {
-        if app.input(&mut self.wgpu_core, event) { return; }
+        app.input(ControlPanel { gfx: &mut self.wgpu_core, draw: &mut self.renderer }, event);
 
         match event {
             WindowEvent::CloseRequested | WindowEvent::KeyboardInput {
@@ -187,19 +188,19 @@ impl Perspective {
 
     /// tell all involved parties the window has been resized
     fn resize<App>(&mut self, app: &mut App, new_size: &winit::dpi::PhysicalSize<u32>) 
-        where App: PerspectiveHandler
+        where App: Perspective
     {
         self.size = *new_size;
         self.wgpu_core.resize(new_size.width, new_size.height);
         app.resize(new_size.width, new_size.height);
     }
 
-    /// udpate calls PerspectiveHandler update methode
+    /// udpate calls Perspective update methode
     /// after which we start the render pipeline
     fn update<App>(&mut self, control_flow: &mut ControlFlow, app: &mut App)
-        where App: PerspectiveHandler
+        where App: Perspective
     {
-        app.update(PerspectiveSystem { gx: &mut self.wgpu_core, rnd: &mut self.renderer });// wgpu_core, self);
+        app.update(ControlPanel { gfx: &mut self.wgpu_core, draw: &mut self.renderer });// wgpu_core, self);
 
         let encoder = self.wgpu_core.device.create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Render Encoder"),
@@ -222,7 +223,7 @@ impl Perspective {
         app: &mut App, 
         err: SurfaceError
     )
-        where App: PerspectiveHandler
+        where App: Perspective
     {
         match err {
             SurfaceError::Lost => self.resize(app, &self.size.clone()),
@@ -233,7 +234,7 @@ impl Perspective {
 
     /// render_pipe: prebuild surface texture and textureview before frame rendering
     fn render_pipe<App>(&mut self, _app: &mut App, encoder: CommandEncoder) -> Result<(), PerspectiveError>
-        where App: PerspectiveHandler
+        where App: Perspective
     {
         return {
             self.renderer.execute_render_pipeline(

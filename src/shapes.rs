@@ -1,6 +1,4 @@
-//use super::*;
 use wgpu::{util::DeviceExt, Buffer};
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -39,7 +37,6 @@ pub struct Shape {
 }
 
 impl Shape {
-
     pub fn setup_wgpu_buffers(&self, device: &wgpu::Device,) -> (Buffer, Buffer) {
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -48,7 +45,6 @@ impl Shape {
                 usage: wgpu::BufferUsages::VERTEX,
             }
         );
-
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
@@ -76,13 +72,14 @@ impl Shape {
 //     }
 // }
 
-pub fn create_square(uv_scale: [f32; 2]) -> Shape {
+pub fn create_square(uv_scale: [f32; 2], image_aspect: f32) -> Shape {
+    let y = 0.5 * image_aspect;
     Shape {
         vertices: vec![
-            Vertex { pos: [-0.5, 0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.5, 0.5, 0.0],      col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.5, -0.5, 0.0],     col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [-0.5, -0.5, 0.0],    col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [-0.5, y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.5,  y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.5,  -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [-0.5, -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
         ],
         indices: vec![
             0, 3, 1,
@@ -112,8 +109,7 @@ pub fn create_square(uv_scale: [f32; 2]) -> Shape {
 pub fn create_hexagon(uv_scale: [f32; 2]) -> Shape {
     Shape {
         vertices: vec![
-            Vertex { pos: [0.0, 0.0, 0.0],  col: [0.5, 0.5, 0.5],   uv_map: [0.5, 0.5], uv_scale, normal: [0.0, 0.0, 0.1] },
-
+            Vertex { pos: [0.0, 0.0, 0.0],          col: [0.5, 0.5, 0.5],    uv_map: [0.5, 0.5],        uv_scale, normal: [0.0, 0.0, 0.1] },
             Vertex { pos: [0.0000000, 0.5, 0.0],    col: [1.00, 0.00, 0.00], uv_map: [0.5, 0.00],       uv_scale, normal: [0.0, 0.0, 1.0] },
             Vertex { pos: [0.4330127, 0.25, 0.0],   col: [0.75, 0.75, 0.00], uv_map: [0.9330127, 0.25], uv_scale, normal: [0.0, 0.0, 1.0] },
             Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.00, 1.00, 0.00], uv_map: [0.9330127, 0.75], uv_scale, normal: [0.0, 0.0, 1.0] },

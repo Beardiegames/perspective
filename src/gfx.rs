@@ -1,11 +1,9 @@
-//use anyhow::Error;
 use raw_window_handle::*;
 use pollster::FutureExt;
-use wgpu::{
-    Surface, Adapter, Device,
-    Dx12Compiler, InstanceDescriptor,
-};
+use wgpu::{Surface, Adapter, Device, Dx12Compiler, InstanceDescriptor};
 
+pub use crate::renderer::*;
+pub use crate::resources::*;
 pub use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop}, 
@@ -13,8 +11,12 @@ pub use winit::{
     dpi::PhysicalSize,
 };
 
-pub use crate::renderer::*;
-pub use crate::resources::*;
+const WGPU_INSTANCE_DESCRIPTOR: InstanceDescriptor = InstanceDescriptor { 
+    backends: wgpu::Backends::all(),
+    dx12_shader_compiler: Dx12Compiler::Fxc,
+    flags: wgpu::InstanceFlags::DEBUG,
+    gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
+};
 
 pub struct Canvas {
     pub surface: wgpu::Surface,
@@ -22,7 +24,7 @@ pub struct Canvas {
     pub depth_map: DepthTexture,
 }
 
-pub struct WgpuCore {
+pub struct WgpuGrapics {
     pub instance: wgpu::Instance,
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
@@ -31,7 +33,7 @@ pub struct WgpuCore {
     pub timer: RunTime,
 }
 
-impl WgpuCore {
+impl WgpuGrapics {
 
     pub fn new(window: &Window, size: PhysicalSize<u32>) -> anyhow::Result<Self>
         where Window: HasRawWindowHandle + HasRawDisplayHandle,
@@ -61,7 +63,7 @@ impl WgpuCore {
         
         let canvas = create_canvas(surface, &device, &adapter, size);         
 
-        Ok( WgpuCore {
+        Ok( WgpuGrapics {
             instance,
             adapter,
             device,
@@ -82,15 +84,6 @@ impl WgpuCore {
         }
     }
 }
-
-// -- helpers --
-
-const WGPU_INSTANCE_DESCRIPTOR: InstanceDescriptor = InstanceDescriptor { 
-    backends: wgpu::Backends::all(),
-    dx12_shader_compiler: Dx12Compiler::Fxc,
-    flags: wgpu::InstanceFlags::DEBUG,
-    gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
-};
 
 fn create_canvas(surface: Option<Surface>, device: &Device, adapter: &Adapter, size: PhysicalSize<u32>) -> Option<Canvas> {
     surface.map(|srf| {

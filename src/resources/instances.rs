@@ -53,23 +53,24 @@ impl InstanceRaw {
     }
 }
 
-
-
-
-
 pub struct ObjectInstance {
     pub instance_idx: u32,
 
     // object transform
     pub position: cgmath::Vector3<f32>,
     pub rotation: cgmath::Quaternion<f32>,
+    pub scale: f32,
 }
 
 impl ObjectInstance {
     pub fn to_raw(&self) -> InstanceRaw {
+        let mut model_mtx = cgmath::Matrix4::from_translation(self.position)
+                            * cgmath::Matrix4::from_scale(self.scale)
+                            * cgmath::Matrix4::from(self.rotation);
+                            
         InstanceRaw {
             index: self.instance_idx,
-            model: (cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation)).into(),
+            model: model_mtx.into()
         }
     }
 }

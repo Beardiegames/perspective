@@ -1,68 +1,60 @@
 use super::*;
+use crate::spritepool::*;
+use cgmath::*;
 
 pub enum PerspectiveError {
     SurfaceError(wgpu::SurfaceError),
     NoCanvas,
 }
 
-pub trait PerspectiveHandler {
+pub trait Perspective {
 
     #[allow(unused)]
-    fn setup(sys: PerspectiveSystem) -> Self;
+    fn setup(ctl: ControlPanel) -> Self;
 
     #[allow(unused)]
-    fn input(&mut self, gx: &mut WgpuCore, event: &WindowEvent) -> bool { false }
+    fn input(&mut self, ctl: ControlPanel, event: &WindowEvent) { }
 
     #[allow(unused)]
-    fn update(&mut self, sys: PerspectiveSystem) {} //gx: &mut WgpuCore, px: &mut Perspective) {}
+    fn update(&mut self, ctl: ControlPanel) {} //gx: &mut WgpuGrapics, px: &mut Perspective) {}
 
     #[allow(unused)]
     fn resize(&mut self, width: u32, height: u32) {}
-
-    // #[allow(unused)]
-    // fn draw(&mut self, mut ctx: RenderContext) {}  
 }
 
-pub struct PerspectiveSystem<'a> {
-    pub gx: &'a mut WgpuCore,
-    pub rnd: &'a mut Renderer,
+pub struct ControlPanel<'a> {
+    pub gfx: &'a mut WgpuGrapics,
+    pub draw: &'a mut Renderer,
 }
 
-impl<'a> PerspectiveSystem<'a> {
-
-    pub fn timer(&mut self) -> &mut RunTime {
-        &mut self.gx.timer
-    }
-
-    pub fn camera(&mut self) -> &mut Camera {
-        &mut self.rnd.camera
-    }
+impl<'a> ControlPanel<'a> {
 
     pub fn set_camera_position(&mut self, x:f32, y:f32, z:f32) {
-        self.rnd.camera.eye = cgmath::Point3::new(x, y, z);
+        self.draw.camera.eye = cgmath::Point3::new(x, y, z);
     }
 
     pub fn set_camera_target(&mut self,  x:f32, y:f32, z:f32) {
-        self.rnd.camera.target = cgmath::Point3::new(x, y, z);
+        self.draw.camera.target = cgmath::Point3::new(x, y, z);
     }
 
-    pub fn load_texture(
+    pub fn create_sprite_pool(
         &mut self, 
-        image_data: &[u8], 
-        uv_scale: (f32, f32), 
+        image_data: &[u8],
         pool_settings: Option<SpritePoolSettings>
         ) -> SpritePoolID 
     {
-        let texture_id = self.rnd.assets.load_texture(
-            &self.gx.device, 
-            &self.gx.queue, 
+        let tex_id = self.draw.assets.load_texture(
+            &self.gfx.device, 
+            &self.gfx.queue, 
             image_data, 
-            uv_scale
+            match &pool_settings { 
+                Some(s) => s.tile_size,
+                None => (1.0, 1.0),
+            }
         );
-
-        self.rnd.create_sprite_pool(
-            self.gx,
-            &texture_id,
+        self.draw.create_sprite_pool(
+            self.gfx,
+            &tex_id,
             &match pool_settings {
                 Some(s) => s,
                 None => SpritePoolSettings::default(),
@@ -74,10 +66,25 @@ impl<'a> PerspectiveSystem<'a> {
         &mut self, 
         sprite_pool_id: &SpritePoolID,
         position: cgmath::Vector3<f32>,
-        rotation: cgmath::Quaternion<f32>
         ) -> SpriteInstanceID 
     {
-        self.rnd.sprites.spawn_sprite(sprite_pool_id, position, rotation)
+        self.draw.sprites.spawn_sprite(
+            sprite_pool_id, 
+            position,
+            Quaternion::from_axis_angle(Vector3::unit_z(), Deg(0.0)), 
+            1.
+        )
+    }
+
+    pub fn spawn_sprite_transform(
+        &mut self, 
+        sprite_pool_id: &SpritePoolID,
+        position: cgmath::Vector3<f32>,
+        rotation: cgmath::Quaternion<f32>,
+        scale: f32,
+        ) -> SpriteInstanceID 
+    {
+        self.draw.sprites.spawn_sprite(sprite_pool_id, position, rotation, scale)
     }
 
     pub fn get_instance(
@@ -85,14 +92,11 @@ impl<'a> PerspectiveSystem<'a> {
         instance_id: &SpriteInstanceID
         ) -> &mut ObjectInstance 
     {
-        self.rnd.sprites.get_instance(instance_id)
+        self.draw.sprites.get_instance(instance_id)
     }
 }
 
-
 pub struct RenderContext<'a> {
-    //pub px: &'a Perspective,
-    //pub gx: &'a WgpuCore,
     pub encoder: CommandEncoder,
     pub draw: Option<DrawContext<'a>>,
 }

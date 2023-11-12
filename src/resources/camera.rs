@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use crate::WgpuDataBinding;
-use crate::WgpuCore;
+use crate::WgpuGrapics;
 use crate::bindings;
 
 
@@ -111,7 +111,7 @@ impl Camera {
         return OPENGL_TO_WGPU_MATRIX * proj * view;
     }
 
-    pub fn buffer_update(&mut self, gx: &WgpuCore) {
+    pub fn buffer_update(&mut self, gx: &WgpuGrapics) {
         self.uniform.projection_matrix = self.build_view_map().into();
         
         gx.queue.write_buffer(

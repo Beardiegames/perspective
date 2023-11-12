@@ -1,4 +1,4 @@
-use crate::{WgpuCore, WgpuDataBinding, create_effects_binding};
+use crate::{WgpuGrapics, WgpuDataBinding, create_effects_binding};
 
 
 #[repr(C)]
@@ -39,7 +39,7 @@ impl Light {
         }
     }
 
-    pub fn buffer_update(&mut self, gx: &WgpuCore) {
+    pub fn buffer_update(&mut self, gx: &WgpuGrapics) {
         // let old_position: cgmath::Vector3<_> = self.uniform.position.into();
 
         // let new_position = cgmath::Quaternion::from_axis_angle(

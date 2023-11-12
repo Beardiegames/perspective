@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-pub use crate::core::*;
+pub use crate::gfx::*;
 
 #[allow(unused_imports)]
 pub use crate::renderer::*;
@@ -11,13 +11,16 @@ pub use crate::resources::*;
 pub use crate::interface::*;
 
 #[allow(unused_imports)]
+pub use crate::spritepool::*;
+
+#[allow(unused_imports)]
 pub use crate::bindings::*;
 
 #[allow(unused_imports)]
 pub use wgpu::*;
 
 #[allow(unused_imports)]
-pub use crate::{Perspective, PerspectiveBuilder};
+pub use crate::{PerspectiveOperator, PerspectiveBuilder};
 
 #[allow(unused_imports)]
 pub use winit::{
@@ -30,5 +33,5 @@ pub use winit::{
 #[allow(unused_imports)]
 pub use cgmath::prelude::*;
 
-#[allow(unused_imports)]
-pub use cgmath::*;
+// #[allow(unused_imports)]
+// pub use cgmath::*;
