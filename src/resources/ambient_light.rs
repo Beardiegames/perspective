@@ -26,12 +26,12 @@ impl Light {
     pub fn new(device: &wgpu::Device, layout:&wgpu::BindGroupLayout, ) -> Self {
         let padding = 0.0;
         let ambient = AmbientLightUniform {
-            color: [0.1, 0.1, 0.1, padding]
+            color: [0.1, 0.1, 0.2, padding]
         };
         let point_lights = vec![
             PointLightData {
-                position: [0.0, 0.0, 0.0, padding],
-                color: [0.8, 0.7, 0.5, padding],
+                position: [0.0, 0.0, 45.0, 1.0],
+                color: [0.95, 0.2, 0.0, padding],
                 //range: 10.0,
             }
         ];

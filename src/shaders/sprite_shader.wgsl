@@ -103,14 +103,22 @@ fn frag(
     let uv = in.uv + sprite_animation(in.index);
     let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, uv);
 
-    var lit_color = object_color.xyz * ambient.color.xyz;
+    var lit_color = vec3f(1.0, 1.0, 1.0); // = object_color.xyz * ambient.color.xyz;
 
     let num_lights = arrayLength(&point_lights);
     for(var i: u32 = 0u; i < num_lights; i=i+1u) {
-    //    //let dist = distance(center, li);
-        let light_strength = max(dot(in.world_normal, point_lights[i].position.xyz), 0.0);
-        lit_color = mix(lit_color, point_lights[i].color.xyz, light_strength);
+
+        let light_dir = normalize(point_lights[i].position.xyz - in.world_position);
+        let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
+        let power = distance(in.world_position, point_lights[i].position.xyz) / point_lights[i].position.a;
+        //let diffuse_color = point_lights[i].color.xyz * diffuse_strength / power;
+
+        //let rest = vec3f(1.0 - lit_color.x, 1.0 - lit_color.y, 1.0 - lit_color.z);
+        //lit_color = mix(lit_color, point_lights[i].color.xyz, 0.5 * (diffuse_strength / power));
+        lit_color = lit_color * point_lights[i].color.xyz * (diffuse_strength / power);
     }
+
+     lit_color = (lit_color + ambient.color.xyz) * object_color.xyz;
     
     //let light_strength = max(dot(in.world_normal, ambient_light.direction), 0.0);
     //let shadow_strength = 1.0 - light_strength;
