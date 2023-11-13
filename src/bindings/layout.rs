@@ -10,7 +10,7 @@ impl PerspectiveShaderLayout {
         let layouts = [
             texture_layout(device),
             camera_layout(device),
-            lights_layout(device),
+            light_layout(device),
             sprite_animation_layout(device),
             
         ];
@@ -30,7 +30,7 @@ impl PerspectiveShaderLayout {
 
     pub fn camera_layout(&self) -> &BindGroupLayout { &self.layouts[1] }
 
-    pub fn lights_layout(&self) -> &BindGroupLayout { &self.layouts[2] }
+    pub fn light_layout(&self) -> &BindGroupLayout { &self.layouts[2] }
 
     pub fn sprite_layout(&self) -> &BindGroupLayout { &self.layouts[3] }
 }
@@ -78,19 +78,31 @@ pub fn camera_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub fn lights_layout(device: &Device) -> BindGroupLayout {
+pub fn light_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
         label: Some("Light Bindgroup Layout"),
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }
+        ],
     })
 }
 

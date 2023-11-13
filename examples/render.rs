@@ -60,10 +60,6 @@ impl Perspective for RenderExample {
     fn update(&mut self, mut ctl: ControlPanel) {
         self.frame_tot += ctl.gfx.timer.frame_delta();
 
-        ctl.draw.ambient_light.uniform.direction[0] = 0.0;
-        ctl.draw.ambient_light.uniform.direction[1] = 0.0;
-        ctl.draw.ambient_light.uniform.direction[2] = 1.0;
-
         let time_elapsed = ctl.gfx.timer.average_step_time() as f32 / 100_000_000.0;
 
         let mut offset = 0.0;

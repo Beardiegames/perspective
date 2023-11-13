@@ -4,55 +4,57 @@ use crate::{WgpuGrapics, WgpuDataBinding, create_lights_binding};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct AmbientLightUniform {
-    pub direction: [f32; 3],
-    _padding: u32, // Due to uniforms requiring 16 byte (4 float) spacing, we need to use a padding field here
-
-    pub light_color: [f32; 3],
-    _padding2: u32,
-
-    pub shadow_color: [f32; 3],
-    _padding3: u32,
+    pub color: [f32; 4],
 }
 
-pub struct AmbientLight {
-    pub uniform: AmbientLightUniform,
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct PointLightData {
+    pub position: [f32; 4],
+    pub color: [f32; 4],
+    //_padding: u32, // Due to uniforms requiring 16 byte (4 float) spacing, we need to use a padding field here
+    //pub range: f32,
+}
+
+pub struct Light {
+    pub ambient: AmbientLightUniform,
+    pub point_lights: Vec<PointLightData>,
     pub binding: WgpuDataBinding,
 }
 
-impl AmbientLight {
+impl Light {
     pub fn new(device: &wgpu::Device, layout:&wgpu::BindGroupLayout, ) -> Self {
-        let uniform = AmbientLightUniform {
-            direction: [0.0, 1.0, 0.0],
-            _padding: 0,
-
-            light_color: [1.0, 0.5, 0.25],
-            _padding2: 0,
-
-            shadow_color: [0.03, 0.05, 0.075],
-            _padding3: 0,
+        let padding = 0.0;
+        let ambient = AmbientLightUniform {
+            color: [0.1, 0.1, 0.1, padding]
         };
-        let binding = create_lights_binding(device, layout, uniform);
+        let point_lights = vec![
+            PointLightData {
+                position: [0.0, 0.0, 0.0, padding],
+                color: [0.8, 0.7, 0.5, padding],
+                //range: 10.0,
+            }
+        ];
+        let binding = create_lights_binding(device, layout, ambient, point_lights.as_slice());
         
-        AmbientLight {
-            uniform,
+        Light {
+            ambient,
+            point_lights,
             binding,
         }
     }
 
     pub fn buffer_update(&mut self, gx: &WgpuGrapics) {
-        // let old_position: cgmath::Vector3<_> = self.uniform.position.into();
-
-        // let new_position = cgmath::Quaternion::from_axis_angle(
-        //         (0.0, 1.0, 0.0).into(), 
-        //         cgmath::Deg(1.0)
-        //     ) * old_position;
-
-        // self.uniform.position = new_position.into();
-
         gx.queue.write_buffer(
             &self.binding.buffers[0], 
             0, 
-            bytemuck::cast_slice(&[self.uniform])
+            bytemuck::cast_slice(&[self.ambient])
+        );
+
+        gx.queue.write_buffer(
+            &self.binding.buffers[1], 
+            0, 
+            bytemuck::cast_slice(self.point_lights.as_slice())
         );
     }
 

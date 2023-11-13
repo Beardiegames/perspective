@@ -5,6 +5,7 @@ use wgpu::BindGroupLayout;
 use wgpu::Device;
 use crate::CameraUniform;
 use crate::AmbientLightUniform;
+use crate::PointLightData;
 use crate::SpriteAnimationData;
 use crate::SpriteFrameElement;
 
@@ -60,12 +61,16 @@ pub fn create_camera_binding(
 pub fn create_lights_binding(
     device: &Device,
     light_layout: &BindGroupLayout,
-    light_uniform: AmbientLightUniform
+    ambient_uniform: AmbientLightUniform,
+    pointlight_data: &[PointLightData],
 ) -> WgpuDataBinding {
 
-    let buffers = vec![buffer::create_lights_buffer(device, light_uniform)];
+    let buffers = vec![
+        buffer::create_ambientlight_buffer(device, ambient_uniform),
+        buffer::create_pointlight_buffer(device, pointlight_data)
+    ];
 
-    let layout = layout::lights_layout(device);
+    let layout = layout::light_layout(device);
 
     let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: light_layout,
@@ -79,8 +84,8 @@ pub fn create_lights_binding(
 pub fn create_sprite_animation_binding(
     device: &Device,
     sprite_layout: &BindGroupLayout,
-    animations: &Vec::<SpriteAnimationData>,
-    frames: &Vec::<SpriteFrameElement>,
+    animations: &[SpriteAnimationData],
+    frames: &[SpriteFrameElement],
     frames_passed: u32,
 ) -> WgpuDataBinding {
 

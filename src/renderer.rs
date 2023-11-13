@@ -9,7 +9,7 @@ pub struct Renderer {
     pub bindgroup_layouts: PerspectiveShaderLayout,
 
     pub camera: Camera,
-    pub ambient_light: AmbientLight,
+    pub light: Light,
     pub assets: AssetPack,
     pub sprites: Sprites,
 }
@@ -24,7 +24,7 @@ impl Renderer {
     {
         let bindgroup_layouts = PerspectiveShaderLayout::new(device);
         let camera = Camera::new(device, bindgroup_layouts.camera_layout(), camera_setup);
-        let ambient_light = AmbientLight::new(device, bindgroup_layouts.lights_layout());     
+        let light = Light::new(device, bindgroup_layouts.light_layout());     
         let sprites = Sprites::new();
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -86,7 +86,7 @@ impl Renderer {
             pipeline,
             layout,
             camera,
-            ambient_light,
+            light,
             bindgroup_layouts,
             assets,
             sprites,
@@ -110,7 +110,7 @@ impl Renderer {
         ) 
     {
         self.camera.buffer_update(gx);
-        self.ambient_light.buffer_update(gx);
+        self.light.buffer_update(gx);
 
         for spritepool in self.sprites.mut_pool_list() {
             spritepool.update_instance_buffer(gx);
@@ -122,7 +122,7 @@ impl Renderer {
             render_pass.set_pipeline(&self.pipeline);
 
             render_pass.set_bind_group(1, &self.camera.binding.bindgroup, &[]);
-            render_pass.set_bind_group(2, &self.ambient_light.binding.bindgroup, &[]);
+            render_pass.set_bind_group(2, &self.light.binding.bindgroup, &[]);
 
             for spritepool in self.sprites.mut_pool_list() {
                 if let Some(tex) =  &self.assets.get_texture(&spritepool.sprite_obj.texture_id) {

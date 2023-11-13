@@ -27,6 +27,7 @@ pub enum CameraProjection {
 #[derive(Debug, Copy, Clone, Pod, Zeroable, Default)]
 pub struct CameraUniform {
     projection_matrix: [[f32; 4]; 4],
+    ambient_color: [f32; 3],
 }
 
 impl CameraUniform {
@@ -34,6 +35,7 @@ impl CameraUniform {
         use cgmath::SquareMatrix;
         Self {
             projection_matrix: cgmath::Matrix4::identity().into(),
+            ambient_color: [0.1, 0.1, 0.1],
         }
     }
 }

@@ -8,12 +8,18 @@ struct CameraUniform {
 var<uniform> camera: CameraUniform;
 
 struct AmbientLight {
-    direction: vec3<f32>,
-    light_color: vec3<f32>,
-    shadow_color: vec3<f32>,
+    color: vec4<f32>,
 }
 @group(2) @binding(0)
-var<uniform> ambient_light: AmbientLight;
+var<uniform> ambient: AmbientLight;
+
+struct PointLight {
+    position: vec4<f32>,
+    color: vec4<f32>,
+    //range: f32,
+}
+@group(2) @binding(1) 
+var<storage> point_lights: array<PointLight>;
 
 struct VertexInput {
     @location(0) pos: vec3<f32>,
@@ -96,14 +102,24 @@ fn frag(
 {
     let uv = in.uv + sprite_animation(in.index);
     let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, uv);
-    
-    let light_strength = max(dot(in.world_normal, ambient_light.direction), 0.0);
-    let shadow_strength = 1.0 - light_strength;
-    let light_color = ambient_light.light_color * light_strength;
-    let shadow_color = ambient_light.shadow_color * shadow_strength;
 
-    let result = (light_color + shadow_color) * object_color.xyz;
-    return vec4<f32>(result, object_color.a);
+    var lit_color = object_color.xyz * ambient.color.xyz;
+
+    let num_lights = arrayLength(&point_lights);
+    for(var i: u32 = 0u; i < num_lights; i=i+1u) {
+    //    //let dist = distance(center, li);
+        let light_strength = max(dot(in.world_normal, point_lights[i].position.xyz), 0.0);
+        lit_color = mix(lit_color, point_lights[i].color.xyz, light_strength);
+    }
+    
+    //let light_strength = max(dot(in.world_normal, ambient_light.direction), 0.0);
+    //let shadow_strength = 1.0 - light_strength;
+    //let light_color = ambient_light.light_color * light_strength;
+    //let shadow_color = ambient_light.shadow_color * shadow_strength;
+    //let result = (light_color + shadow_color) * object_color.xyz;
+    
+    
+    return vec4<f32>(lit_color, object_color.a);
 }
 
 fn sprite_animation(i: u32) -> vec2<f32> {
