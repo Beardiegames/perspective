@@ -111,22 +111,14 @@ fn frag(
         let light_dir = normalize(point_lights[i].position.xyz - in.world_position);
         let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
         let power = distance(in.world_position, point_lights[i].position.xyz) / point_lights[i].position.a;
-        //let diffuse_color = point_lights[i].color.xyz * diffuse_strength / power;
 
-        //let rest = vec3f(1.0 - lit_color.x, 1.0 - lit_color.y, 1.0 - lit_color.z);
-        //lit_color = mix(lit_color, point_lights[i].color.xyz, 0.5 * (diffuse_strength / power));
         lit_color = lit_color * point_lights[i].color.xyz * (diffuse_strength / power);
     }
+    
+    lit_color = (lit_color + ambient.color.xyz);
+    //lit_color = vec3f(min(lit_color.r, 0.999), min(lit_color.g, 0.999), min(lit_color.b, 0.999));
+    lit_color *= object_color.xyz;
 
-     lit_color = (lit_color + ambient.color.xyz) * object_color.xyz;
-    
-    //let light_strength = max(dot(in.world_normal, ambient_light.direction), 0.0);
-    //let shadow_strength = 1.0 - light_strength;
-    //let light_color = ambient_light.light_color * light_strength;
-    //let shadow_color = ambient_light.shadow_color * shadow_strength;
-    //let result = (light_color + shadow_color) * object_color.xyz;
-    
-    
     return vec4<f32>(lit_color, object_color.a);
 }
 

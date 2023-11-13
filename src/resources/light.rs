@@ -30,10 +30,20 @@ impl Light {
         };
         let point_lights = vec![
             PointLightData {
-                position: [0.0, 0.0, 45.0, 1.0],
-                color: [0.95, 0.2, 0.0, padding],
+                position: [-5.0, 0.0, 45.0, 1.0],
+                color: [0.99, 0.0, 0.0, padding],
                 //range: 10.0,
-            }
+            },
+            // PointLightData {
+            //     position: [0.0, 0.0, 45.0, 1.0],
+            //     color: [0.0, 0.99, 0.0, padding],
+            //     //range: 10.0,
+            // },
+            // PointLightData {
+            //     position: [5.0, 0.0, 45.0, 1.0],
+            //     color: [0.0, 0.0, 0.99, padding],
+            //     //range: 10.0,
+            // }
         ];
         let binding = create_lights_binding(device, layout, ambient, point_lights.as_slice());
         
