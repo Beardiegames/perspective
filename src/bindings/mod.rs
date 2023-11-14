@@ -4,8 +4,8 @@ pub mod layout;
 use wgpu::BindGroupLayout;
 use wgpu::Device;
 use crate::CameraUniform;
-use crate::AmbientLightUniform;
-use crate::PointLightData;
+use crate::AmbientLight;
+use crate::PointLight;
 use crate::SpriteAnimationData;
 use crate::SpriteFrameElement;
 
@@ -61,13 +61,14 @@ pub fn create_camera_binding(
 pub fn create_lights_binding(
     device: &Device,
     light_layout: &BindGroupLayout,
-    ambient_uniform: AmbientLightUniform,
-    pointlight_data: &[PointLightData],
+    ambient_uniform: AmbientLight,
+    pointlight_data: &[PointLight],
 ) -> WgpuDataBinding {
 
     let buffers = vec![
         buffer::create_ambientlight_buffer(device, ambient_uniform),
-        buffer::create_pointlight_buffer(device, pointlight_data)
+        buffer::create_pointlight_buffer(device, pointlight_data),
+        buffer::create_pointlightcount_buffer(device, 0),
     ];
 
     let layout = layout::light_layout(device);

@@ -1,4 +1,5 @@
 use perspective::prelude::*;
+use cgmath::Vector3;
 
 fn main() -> anyhow::Result<()> {
     PerspectiveBuilder::new()
@@ -52,6 +53,34 @@ impl Perspective for RenderExample {
         ctl.set_camera_position(0.0, 2.5, 47.0);
         ctl.draw.camera.target.y = -30.0;
 
+        ctl.draw.light.point_lights.push(
+            PointLight::from(
+                PointLightSetup {
+                    position: Vector3::new(0.0, 0.0, 46.0),
+                    color: [0.0, 1.0, 0.0, 0.0],
+                    power: 4.0
+                }
+            )
+        );
+        ctl.draw.light.point_lights.push(
+            PointLight::from(
+                PointLightSetup {
+                    position: Vector3::new(4.0, 0.0, 44.0),
+                    color: [0.0, 0.0, 1.0, 0.0],
+                    power: 6.0
+                }
+            )
+        );
+        ctl.draw.light.point_lights.push(
+            PointLight::from(
+                PointLightSetup {
+                    position: Vector3::new(-4.0, 0.0, 45.0),
+                    color: [1.0, 0.0, 0.0, 0.0],
+                    power: 6.0
+                }
+            )
+        );
+
         RenderExample { log_counter: 0, frame_tot: 0.0, megamans, cats }
     }
 
@@ -91,6 +120,22 @@ impl Perspective for RenderExample {
 
             offset += 0.1;
         }
+
+        let cp = 0.15 + (ctl.gfx.timer.average_step_time() as f32 / 2_000_000.0).sin() * 0.1;
+        ctl.draw.light.ambient.color = [cp, cp, cp, 1.0];
+
+        let mut time_elapsed = ctl.gfx.timer.average_step_time() as f32 / 500_000.0;
+
+        ctl.draw.light.point_lights[0].position[0] = time_elapsed.cos() * 5.0;
+        ctl.draw.light.point_lights[0].position[2] = 42.0 + time_elapsed.sin() * 5.0;
+
+        time_elapsed += 2.1;
+        ctl.draw.light.point_lights[1].position[0] = time_elapsed.cos() * 5.0;
+        ctl.draw.light.point_lights[1].position[2] = 42.0 + time_elapsed.sin() * 5.0;
+
+        time_elapsed += 2.1;
+        ctl.draw.light.point_lights[2].position[0] = time_elapsed.cos() * 5.0;
+        ctl.draw.light.point_lights[2].position[2] = 42.0 + time_elapsed.sin() * 5.0;
 
         if self.log_counter == 255 {
             println!("frame_delta: {:?} secs", self.frame_tot / 256.0);

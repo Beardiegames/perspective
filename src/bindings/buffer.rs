@@ -2,8 +2,8 @@ use wgpu::{Device, Buffer, util::{DeviceExt, BufferInitDescriptor}};
 
 use crate::{
     CameraUniform, 
-    AmbientLightUniform, 
-    PointLightData, 
+    AmbientLight, 
+    PointLight, 
     SpriteAnimationData,
     SpriteFrameElement
 };
@@ -17,7 +17,7 @@ pub fn create_camera_buffer(device: &Device, camera_uniform: CameraUniform) -> B
     })
 }
 
-pub fn create_ambientlight_buffer(device: &Device, ambient_uniform: AmbientLightUniform) -> Buffer {
+pub fn create_ambientlight_buffer(device: &Device, ambient_uniform: AmbientLight) -> Buffer {
     device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Ambient Light Buffer"),
         contents: bytemuck::cast_slice(&[ambient_uniform]),
@@ -25,11 +25,19 @@ pub fn create_ambientlight_buffer(device: &Device, ambient_uniform: AmbientLight
     })
 }
 
-pub fn create_pointlight_buffer(device: &Device, pointlights: &[PointLightData]) -> Buffer {
+pub fn create_pointlight_buffer(device: &Device, pointlights: &[PointLight]) -> Buffer {
     device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Point Light Buffer"),
         contents: bytemuck::cast_slice(pointlights),
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+    })
+}
+
+pub fn create_pointlightcount_buffer(device: &Device, num_pointlights: u32) -> Buffer {
+    device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Point Light Count Buffer"),
+        contents: bytemuck::cast_slice(&[num_pointlights]),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     })
 }
 

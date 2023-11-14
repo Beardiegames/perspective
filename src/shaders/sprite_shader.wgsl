@@ -7,20 +7,6 @@ struct CameraUniform {
 @group(1) @binding(0)
 var<uniform> camera: CameraUniform;
 
-struct AmbientLight {
-    color: vec4<f32>,
-}
-@group(2) @binding(0)
-var<uniform> ambient: AmbientLight;
-
-struct PointLight {
-    position: vec4<f32>,
-    color: vec4<f32>,
-    //range: f32,
-}
-@group(2) @binding(1) 
-var<storage> point_lights: array<PointLight>;
-
 struct VertexInput {
     @location(0) pos: vec3<f32>,
     @location(1) col: vec3<f32>,
@@ -74,11 +60,31 @@ fn vert(
 // Fragment shader
 // ---------------
 
+// # textures
 @group(0) @binding(0)
 var t_diffuse: texture_2d<f32>;
 @group(0) @binding(1)
 var s_diffuse: sampler;
 
+// # lights
+struct AmbientLight {
+    color: vec4<f32>,
+}
+@group(2) @binding(0)
+var<uniform> ambient: AmbientLight;
+
+struct PointLight {
+    position: vec4<f32>,
+    color: vec4<f32>,
+    //range: f32,
+}
+@group(2) @binding(1) 
+var<storage> point_lights: array<PointLight>;
+
+@group(2) @binding(2) 
+var<uniform> point_light_count: u32;
+
+// # sprite animations
 @group(3) @binding(0) 
 var<storage> sprite_frames: array<vec2<f32>>;
 
@@ -102,21 +108,24 @@ fn frag(
 {
     let uv = in.uv + sprite_animation(in.index);
     let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, uv);
+    var lit_color = vec3f(0.0, 0.0, 0.0);
 
-    var lit_color = vec3f(1.0, 1.0, 1.0); // = object_color.xyz * ambient.color.xyz;
-
-    let num_lights = arrayLength(&point_lights);
-    for(var i: u32 = 0u; i < num_lights; i=i+1u) {
+    //let num_lights = arrayLength(&point_lights);
+    for(var i: u32 = 0u; i < point_light_count; i=i+1u) {
 
         let light_dir = normalize(point_lights[i].position.xyz - in.world_position);
         let diffuse_strength = max(dot(in.world_normal, light_dir), 0.0);
         let power = distance(in.world_position, point_lights[i].position.xyz) / point_lights[i].position.a;
 
-        lit_color = lit_color * point_lights[i].color.xyz * (diffuse_strength / power);
+        lit_color += point_lights[i].color.xyz * (diffuse_strength / power);
     }
     
-    lit_color = (lit_color + ambient.color.xyz);
-    //lit_color = vec3f(min(lit_color.r, 0.999), min(lit_color.g, 0.999), min(lit_color.b, 0.999));
+    lit_color += ambient.color.xyz;
+    lit_color = vec3f(
+        min(lit_color.x, 1.0), 
+        min(lit_color.y, 1.0), 
+        min(lit_color.z, 1.0)
+    );
     lit_color *= object_color.xyz;
 
     return vec4<f32>(lit_color, object_color.a);
