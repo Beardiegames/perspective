@@ -29,13 +29,19 @@ pub struct ControlPanel<'a> {
 
 impl<'a> ControlPanel<'a> {
 
-    pub fn set_camera_position(&mut self, x:f32, y:f32, z:f32) {
-        self.draw.camera.eye = cgmath::Point3::new(x, y, z);
-    }
+    pub fn timer(&self) -> &RunTime { &self.gfx.timer }
 
-    pub fn set_camera_target(&mut self,  x:f32, y:f32, z:f32) {
-        self.draw.camera.target = cgmath::Point3::new(x, y, z);
-    }
+    pub fn camera(&mut self) -> &mut Camera { &mut self.draw.camera }
+
+    pub fn light(&mut self) -> &mut Light { &mut self.draw.light }
+
+    // pub fn set_camera_position(&mut self, x:f32, y:f32, z:f32) {
+    //     self.draw.camera.eye = cgmath::Point3::new(x, y, z);
+    // }
+
+    // pub fn set_camera_target(&mut self,  x:f32, y:f32, z:f32) {
+    //     self.draw.camera.target = cgmath::Point3::new(x, y, z);
+    // }
 
     pub fn create_sprite_pool(
         &mut self, 

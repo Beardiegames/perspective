@@ -50,36 +50,23 @@ impl Perspective for RenderExample {
             cats.push(ctl.spawn_sprite_transform(&cat_sprite, position, rotation, scale));
         }
 
-        ctl.set_camera_position(0.0, 2.5, 47.0);
-        ctl.draw.camera.target.y = -30.0;
+        ctl.camera().eye = cgmath::Point3::new(0.0, 2.5, 47.0);
+        ctl.camera().target.y = -30.0;
 
-        ctl.draw.light.point_lights.push(
-            PointLight::from(
-                PointLightSetup {
-                    position: Vector3::new(0.0, 0.0, 46.0),
-                    color: [0.0, 1.0, 0.0, 0.0],
-                    power: 4.0
-                }
-            )
-        );
-        ctl.draw.light.point_lights.push(
-            PointLight::from(
-                PointLightSetup {
-                    position: Vector3::new(4.0, 0.0, 44.0),
-                    color: [0.0, 0.0, 1.0, 0.0],
-                    power: 6.0
-                }
-            )
-        );
-        ctl.draw.light.point_lights.push(
-            PointLight::from(
-                PointLightSetup {
-                    position: Vector3::new(-4.0, 0.0, 45.0),
-                    color: [1.0, 0.0, 0.0, 0.0],
-                    power: 6.0
-                }
-            )
-        );
+        ctl.light().add_pointlight()
+            .position(Vector3::new(0.0, 0.0, 46.0))
+            .color([0.0, 1.0, 0.0, 1.0])
+            .power(4.0);
+
+        ctl.light().add_pointlight()
+            .position(Vector3::new(4.0, 0.0, 44.0))
+            .color([0.0, 0.0, 1.0, 1.0])
+            .power(6.0);
+
+        ctl.light().add_pointlight()
+            .position(Vector3::new(-4.0, 0.0, 45.0))
+            .color([1.0, 0.0, 0.0, 1.0])
+            .power(6.0);
 
         RenderExample { log_counter: 0, frame_tot: 0.0, megamans, cats }
     }
@@ -87,55 +74,55 @@ impl Perspective for RenderExample {
     fn input(&mut self, mut _ctl: ControlPanel, _event: &WindowEvent) {}
 
     fn update(&mut self, mut ctl: ControlPanel) {
-        self.frame_tot += ctl.gfx.timer.frame_delta();
+        self.frame_tot += ctl.timer().frame_delta();
 
-        let time_elapsed = ctl.gfx.timer.average_step_time() as f32 / 100_000_000.0;
+        let time_elapsed = ctl.timer().average_step_time() as f32 / 100_000_000.0;
 
         let mut offset = 0.0;
         for cat_instance in &self.cats {
-            let co_time = (offset + time_elapsed).cos();
-            let si_time = (offset + time_elapsed).sin();
+            let deg = offset + time_elapsed;
+            let rad = 1.0 + offset * 0.01;
 
-            let xpos = 0.0 + co_time * (1.0 + offset * 0.01);
-            let zpos = -5.0 + si_time * (1.0 + offset * 0.01);
-
-            let cat = ctl.get_instance(cat_instance); //self.renderer.get_sprite(cat_instance);
-            cat.position = cgmath::Vector3 { x: xpos, y: -0.2, z: zpos };
+            let cat = ctl.get_instance(cat_instance);
+                cat.position.x = deg.cos() * rad; 
+                cat.position.y = -0.2;
+                cat.position.z = -5.0 + deg.sin() * rad;
 
             offset += 0.1;
         }
 
-        let time_elapsed = ctl.gfx.timer.average_step_time() as f32 / 75_000_000.0;
+        let time_elapsed = ctl.timer().average_step_time() as f32 / 75_000_000.0;
 
         offset = 0.0;
         for megaman_instance in &self.megamans {
-            let co_time = (offset + time_elapsed).cos();
-            let si_time = (offset + time_elapsed).sin();
-
-            let xpos = 0.0 + co_time * (1.0 + offset * 0.01);
-            let zpos = -5.0 + si_time * (1.0 + offset * 0.01);
+            let deg = offset + time_elapsed;
+            let rad = 1.0 + offset * 0.01;
 
             let megaman = ctl.get_instance(megaman_instance);
-            megaman.position = cgmath::Vector3 { x: -xpos, y: 0.0, z: zpos };
+                megaman.position.x = -deg.cos() * rad; 
+                megaman.position.z = -5.0 + deg.sin() * rad;
 
             offset += 0.1;
         }
 
-        let cp = 0.15 + (ctl.gfx.timer.average_step_time() as f32 / 2_000_000.0).sin() * 0.1;
-        ctl.draw.light.ambient.color = [cp, cp, cp, 1.0];
+        let cp = 0.15 + (ctl.timer().average_step_time() as f32 / 2_000_000.0).sin() * 0.1;
+        ctl.light().ambient.color = [cp, cp, cp, 1.0];
 
-        let mut time_elapsed = ctl.gfx.timer.average_step_time() as f32 / 500_000.0;
+        let mut time_elapsed = ctl.timer().average_step_time() as f32 / 500_000.0;
 
-        ctl.draw.light.point_lights[0].position[0] = time_elapsed.cos() * 5.0;
-        ctl.draw.light.point_lights[0].position[2] = 42.0 + time_elapsed.sin() * 5.0;
-
-        time_elapsed += 2.1;
-        ctl.draw.light.point_lights[1].position[0] = time_elapsed.cos() * 5.0;
-        ctl.draw.light.point_lights[1].position[2] = 42.0 + time_elapsed.sin() * 5.0;
+        ctl.light().get_pointlight(0)
+            .x(time_elapsed.cos() * 5.0)
+            .z(42.0 + time_elapsed.sin() * 5.0);
 
         time_elapsed += 2.1;
-        ctl.draw.light.point_lights[2].position[0] = time_elapsed.cos() * 5.0;
-        ctl.draw.light.point_lights[2].position[2] = 42.0 + time_elapsed.sin() * 5.0;
+        ctl.light().get_pointlight(1)
+            .x(time_elapsed.cos() * 5.0)
+            .z(42.0 + time_elapsed.sin() * 5.0);
+
+        time_elapsed += 2.1;
+        ctl.light().get_pointlight(2)
+            .x(time_elapsed.cos() * 5.0)
+            .z(42.0 + time_elapsed.sin() * 5.0);
 
         if self.log_counter == 255 {
             println!("frame_delta: {:?} secs", self.frame_tot / 256.0);

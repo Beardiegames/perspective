@@ -15,25 +15,52 @@ pub struct PointLight {
     //_padding: u32, // Due to uniforms requiring 16 byte (4 float) spacing, we need to use a padding field here
 }
 
-pub struct PointLightSetup {
-    pub position: cgmath::Vector3<f32>,
-    pub color: [f32; 4],
-    pub power: f32,
+impl PointLight {
+    pub fn position(&mut self, position: cgmath::Vector3<f32>) -> &mut Self {
+        self.position[0] = position.x;
+        self.position[1] = position.y;
+        self.position[2] = position.z;
+        self
+    }
+
+    pub fn power(&mut self, power: f32) -> &mut Self {
+        self.position[3] = power;
+        self
+    }
+
+    pub fn color(&mut self, color: [f32; 4]) -> &mut Self {
+        self.color = color;
+        self
+    }
+
+    pub fn x(&mut self, x: f32) -> &mut Self { self.position[0] = x; self }
+    pub fn y(&mut self, y: f32) -> &mut Self { self.position[1] = y; self }
+    pub fn z(&mut self, z: f32) -> &mut Self { self.position[2] = z; self }
+
+    pub fn r(&mut self, r: f32) -> &mut Self { self.color[0] = r; self }
+    pub fn g(&mut self, g: f32) -> &mut Self { self.color[1] = g; self }
+    pub fn b(&mut self, b: f32) -> &mut Self { self.color[2] = b; self }
 }
 
-impl From<PointLightSetup> for PointLight {
-    fn from(other: PointLightSetup) -> PointLight {
-        PointLight {
-            position: [
-                other.position.x, 
-                other.position.y, 
-                other.position.z, 
-                other.power
-            ],
-            color: other.color,
-        }
-    }
-}
+// pub struct PointLightSetup {
+//     pub position: cgmath::Vector3<f32>,
+//     pub color: [f32; 4],
+//     pub power: f32,
+// }
+
+// impl From<PointLightSetup> for PointLight {
+//     fn from(other: PointLightSetup) -> PointLight {
+//         PointLight {
+//             position: [
+//                 other.position.x, 
+//                 other.position.y, 
+//                 other.position.z, 
+//                 other.power
+//             ],
+//             color: other.color,
+//         }
+//     }
+// }
 
 pub struct Light {
     pub ambient: AmbientLight,
@@ -55,6 +82,16 @@ impl Light {
             point_lights: Vec::new(),
             binding,
         }
+    }
+
+    pub fn add_pointlight(&mut self) -> &mut PointLight {
+        self.point_lights.push(PointLight::default());
+        let idx = self.point_lights.len() - 1;
+        &mut self.point_lights[idx]
+    }
+
+    pub fn get_pointlight(&mut self, index: usize) -> &mut PointLight {
+        &mut self.point_lights[index]
     }
 
     pub fn buffer_update(&mut self, gx: &WgpuGrapics) {

@@ -64,9 +64,9 @@ pub struct ObjectInstance {
 
 impl ObjectInstance {
     pub fn to_raw(&self) -> InstanceRaw {
-        let mut model_mtx = cgmath::Matrix4::from_translation(self.position)
-                            * cgmath::Matrix4::from_scale(self.scale)
-                            * cgmath::Matrix4::from(self.rotation);
+        let model_mtx = cgmath::Matrix4::from_translation(self.position)
+            * cgmath::Matrix4::from_scale(self.scale)
+            * cgmath::Matrix4::from(self.rotation);
                             
         InstanceRaw {
             index: self.instance_idx,
