@@ -76,10 +76,10 @@ pub fn create_square(uv_scale: [f32; 2], image_aspect: f32) -> Shape {
     let y = 0.5 * image_aspect;
     Shape {
         vertices: vec![
-            Vertex { pos: [-0.5, y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.5,  y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.5,  -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [-0.5, -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [-0.5, y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 0.0], uv_scale, normal: [-0.33, 0.33, 0.33] },
+            Vertex { pos: [0.5,  y,  0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 0.0], uv_scale, normal: [0.33, 0.33, 0.33] },
+            Vertex { pos: [0.5,  -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [1.0, 1.0], uv_scale, normal: [0.33, -0.33, 0.33] },
+            Vertex { pos: [-0.5, -y, 0.0],  col: [0.5, 0.0, 0.5], uv_map: [0.0, 1.0], uv_scale, normal: [-0.33, -0.33, 0.33] },
         ],
         indices: vec![
             0, 3, 1,
@@ -106,16 +106,19 @@ pub fn create_square(uv_scale: [f32; 2], image_aspect: f32) -> Shape {
 // }
 
 #[allow(dead_code)]
-pub fn create_hexagon(uv_scale: [f32; 2]) -> Shape {
+pub fn create_hexagon(uv_scale: [f32; 2], image_aspect: f32) -> Shape {
+    let y1 = 0.5 * image_aspect;
+    let y2 = 0.25 * image_aspect;
+
     Shape {
         vertices: vec![
-            Vertex { pos: [0.0, 0.0, 0.0],          col: [0.5, 0.5, 0.5],    uv_map: [0.5, 0.5],        uv_scale, normal: [0.0, 0.0, 0.1] },
-            Vertex { pos: [0.0000000, 0.5, 0.0],    col: [1.00, 0.00, 0.00], uv_map: [0.5, 0.00],       uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.4330127, 0.25, 0.0],   col: [0.75, 0.75, 0.00], uv_map: [0.9330127, 0.25], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.4330127, -0.25, 0.0],  col: [0.00, 1.00, 0.00], uv_map: [0.9330127, 0.75], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [0.0000000, -0.5, 0.0],   col: [0.00, 0.75, 0.75], uv_map: [0.5, 1.00],       uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [-0.4330127, -0.25, 0.0], col: [0.00, 0.00, 1.00], uv_map: [0.0669873, 0.75], uv_scale, normal: [0.0, 0.0, 1.0] },
-            Vertex { pos: [-0.4330127, 0.25, 0.0],  col: [0.75, 0.00, 0.75], uv_map: [0.0669873, 0.25], uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.0, 0.0, 0.0],          col: [0.5, 0.5, 0.5],    uv_map: [0.5, 0.5],        uv_scale, normal: [0.0, 0.0, 1.0] },
+            Vertex { pos: [0.0000000, y1, 0.0],     col: [1.00, 0.00, 0.00], uv_map: [0.5, 0.00],       uv_scale, normal: [0.0, 1.0, 0.0] },
+            Vertex { pos: [0.4330127, y2, 0.0],     col: [0.75, 0.75, 0.00], uv_map: [0.9330127, 0.25], uv_scale, normal: [0.5, 0.5, 1.0] },
+            Vertex { pos: [0.4330127, -y2, 0.0],    col: [0.00, 1.00, 0.00], uv_map: [0.9330127, 0.75], uv_scale, normal: [0.5, 0.5, 1.0] },
+            Vertex { pos: [0.0000000, -y1, 0.0],    col: [0.00, 0.75, 0.75], uv_map: [0.5, 1.00],       uv_scale, normal: [0.0, -1.0, 0.0] },
+            Vertex { pos: [-0.4330127, -y2, 0.0],   col: [0.00, 0.00, 1.00], uv_map: [0.0669873, 0.75], uv_scale, normal: [-0.5, -0.5, 1.0] },
+            Vertex { pos: [-0.4330127, y2, 0.0],    col: [0.75, 0.00, 0.75], uv_map: [0.0669873, 0.25], uv_scale, normal: [-0.5, -0.5, 1.0] },
         ],
         indices: vec![
             0, 2, 1,

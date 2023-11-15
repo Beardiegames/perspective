@@ -56,12 +56,12 @@ impl Perspective for RenderExample {
         ctl.light().add_pointlight()
             .position(Vector3::new(0.0, 0.0, 46.0))
             .color([0.0, 1.0, 0.0, 1.0])
-            .power(4.0);
+            .power(12.0);
 
         ctl.light().add_pointlight()
             .position(Vector3::new(4.0, 0.0, 44.0))
             .color([0.0, 0.0, 1.0, 1.0])
-            .power(6.0);
+            .power(8.0);
 
         ctl.light().add_pointlight()
             .position(Vector3::new(-4.0, 0.0, 45.0))
@@ -119,7 +119,7 @@ impl Perspective for RenderExample {
             .x(time_elapsed.cos() * 5.0)
             .z(42.0 + time_elapsed.sin() * 5.0);
 
-        time_elapsed += 2.1;
+        time_elapsed += 1.05;
         ctl.light().get_pointlight(2)
             .x(time_elapsed.cos() * 5.0)
             .z(42.0 + time_elapsed.sin() * 5.0);

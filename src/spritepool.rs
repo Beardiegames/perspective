@@ -22,6 +22,7 @@ impl SpriteRenderObject {
     {
         // Setup vertex bindings
         let shape = crate::shapes::create_square([settings.tile_size.0, settings.tile_size.1], settings.image_aspect);
+        //let shape = crate::shapes::create_hexagon([settings.tile_size.0, settings.tile_size.1], settings.image_aspect);
         let (vertex_buffer, index_buffer) = shape.setup_wgpu_buffers(device);
 
         let num_vertices = shape.vertices.len() as u32;
